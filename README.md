@@ -6,17 +6,18 @@ The "ChatGPT Continue Generating Auto-Clicker" extension simplifies your experie
 
 Because some people were telling false information about my extension, I will release the code here to be open-source and to be analyzed by anyone who wants to.
 
-Language: English (US)
-
 # UPDATES:
 Now it will ask the user to reload the active OpenAI ChatGPT tabs, if any.
 
 
 # Key Features:
-Automated Clicking: The extension automatically clicks the "Continue generating" button whenever it becomes available, eliminating the need for manual intervention.
-Enhanced Productivity: By eliminating the need to manually click the button, you can focus on other tasks or switch tabs without worrying about interrupting the generation process.
-Time-Saver: No more waiting for the prompt to generate a response manually. When you return to the ChatGPT tab, the extension ensures that the generation continues seamlessly.
-Language Support:
+## Automated Clicking:
+The extension automatically clicks the "Continue generating" button whenever it becomes available, eliminating the need for manual intervention.
+## Enhanced Productivity: 
+By eliminating the need to manually click the button, you can focus on other tasks or switch tabs without worrying about interrupting the generation process.
+## Time-Saver: 
+No more waiting for the prompt to generate a response manually. When you return to the ChatGPT tab, the extension ensures that the generation continues seamlessly.
+## Language Support:
 The extension currently supports the English language (en-US). We are actively working to expand language support to include more languages in future updates, ensuring a wider user base can benefit from the auto-clicking functionality.
 
 # Privacy and Security:
