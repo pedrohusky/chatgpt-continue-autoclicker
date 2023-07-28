@@ -3,6 +3,10 @@
 ChatGPT Continue Generating Auto-Clicker
 The "ChatGPT Continue Generating Auto-Clicker" extension simplifies your experience with ChatGPT by automating the process of clicking the "Continue generating" button. With this extension, you can save time and effort, especially if you frequently switch tabs while waiting for your prompt to generate a response.
 
+# Why this repo:
+
+Because some people were telling false information about my extension, then I put the code here to be open-source and to be analyzed by anyone who wants to.
+
 Language: English (US)
 
 # UPDATES:
