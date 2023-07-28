@@ -10,7 +10,9 @@ Language: English (US)
 
 # UPDATES:
 Now it will ask the user to reload the active OpenAI ChatGPT tabs, if any.
-Key Features:
+
+
+# Key Features:
 Automated Clicking: The extension automatically clicks the "Continue generating" button whenever it becomes available, eliminating the need for manual intervention.
 Enhanced Productivity: By eliminating the need to manually click the button, you can focus on other tasks or switch tabs without worrying about interrupting the generation process.
 Time-Saver: No more waiting for the prompt to generate a response manually. When you return to the ChatGPT tab, the extension ensures that the generation continues seamlessly.
