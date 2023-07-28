@@ -4,7 +4,7 @@ The "ChatGPT Continue Generating Auto-Clicker" extension simplifies your experie
 
 # Why this repo:
 
-Because some people were telling false information about my extension, then I put the code here to be open-source and to be analyzed by anyone who wants to.
+Because some people were telling false information about my extension, I will release the code here to be open-source and to be analyzed by anyone who wants to.
 
 Language: English (US)
 
