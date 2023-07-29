@@ -15,12 +15,12 @@ Because some people were telling false information about my extension, I will re
 • 28/07/23 - UPTADE 1.4
              Now the extension has settings:
 - You can change the auto click interval now. *Note that setting lower than 1000 ms may cause issues with "only one message at a time"!*
- '
-               ![image](https://github.com/pedrohusky/Continue-AutoClicker-for-Chromium-based-and-Firefox-browsers/assets/59580251/c9dfbd17-3b4c-425d-9915-60a995e90bd3)
+
+  - ![image](https://github.com/pedrohusky/Continue-AutoClicker-for-Chromium-based-and-Firefox-browsers/assets/59580251/c9dfbd17-3b4c-425d-9915-60a995e90bd3)
 
 
 - You can enable or disable the display of a button below code blocks that downloads the code block as a file (and in the correct language too).
-               ![image](https://github.com/pedrohusky/Continue-AutoClicker-for-Chromium-based-and-Firefox-browsers/assets/59580251/c1ae5dba-9615-4165-9bd8-7ae7d7baa9ed)
+  - ![image](https://github.com/pedrohusky/Continue-AutoClicker-for-Chromium-based-and-Firefox-browsers/assets/59580251/c1ae5dba-9615-4165-9bd8-7ae7d7baa9ed)
 
 
 
@@ -38,8 +38,11 @@ The extension currently supports the English language (en-US). We are actively w
 We prioritize your privacy and adhere to strict security standards. The extension does not collect or store any personal data or transmit any information outside of the ChatGPT environment. Rest assured that your interactions with ChatGPT remain confidential and secure.
 
 # Installation:
-Install the extension from the store.
-Open the ChatGPT chat in your browser.
-Sit back and relax while the extension automatically clicks the "Continue generating" button for you.
+- Install the extension from the store.
+
+  - Chrome Store: https://chrome.google.com/webstore/detail/chatgpt-continue-generati/ifckaoegkgefgnicdfmnkfafaeiingmp?hl=pt-BR&authuser=0
+  - Mozilla Store: *Pending approval*
+- Open the ChatGPT chat in your browser.
+- Sit back and relax while the extension automatically clicks the "Continue generating" button for you.
 
 
