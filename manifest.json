@@ -21,8 +21,7 @@
   ],
   "permissions": [
     "notifications",
-    "storage",
-    "https://chat.openai.com/*"
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html"
