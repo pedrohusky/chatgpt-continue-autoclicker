@@ -16,9 +16,6 @@
       ]
     }
   ],
-  "host_permissions": [
-    "https://chat.openai.com/*"
-  ],
   "permissions": [
     "notifications",
     "storage",
