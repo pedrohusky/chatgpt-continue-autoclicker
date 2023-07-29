@@ -15,6 +15,7 @@ Because some people were telling false information about my extension, I will re
 • 28/07/23 - UPTADE 1.4
              Now the extension has settings:
 - You can change the auto click interval now. *Note that setting lower than 1000 ms may cause issues with "only one message at a time"!*
+ '
                ![image](https://github.com/pedrohusky/Continue-AutoClicker-for-Chromium-based-and-Firefox-browsers/assets/59580251/c9dfbd17-3b4c-425d-9915-60a995e90bd3)
 
 
