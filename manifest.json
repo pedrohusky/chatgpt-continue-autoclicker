@@ -20,9 +20,9 @@
     "https://chat.openai.com/*"
   ],
   "permissions": [
-    "activeTab",
     "notifications",
-    "storage"
+    "storage",
+    "https://chat.openai.com/*"
   ],
   "action": {
     "default_popup": "popup.html"
