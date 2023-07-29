@@ -38,8 +38,11 @@ The extension currently supports the English language (en-US). We are actively w
 We prioritize your privacy and adhere to strict security standards. The extension does not collect or store any personal data or transmit any information outside of the ChatGPT environment. Rest assured that your interactions with ChatGPT remain confidential and secure.
 
 # Installation:
-Install the extension from the store.
-Open the ChatGPT chat in your browser.
-Sit back and relax while the extension automatically clicks the "Continue generating" button for you.
+- Install the extension from the store.
+
+  - Chrome Store: https://chrome.google.com/webstore/detail/chatgpt-continue-generati/ifckaoegkgefgnicdfmnkfafaeiingmp?hl=pt-BR&authuser=0
+  - Mozilla Store: *Pending approval*
+- Open the ChatGPT chat in your browser.
+- Sit back and relax while the extension automatically clicks the "Continue generating" button for you.
 
 
