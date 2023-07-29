@@ -45,6 +45,8 @@ const languageExtensions = {
   'assembly': '.asm'
 };
 
+let last_language = '';
+
 (function () {
 
   function clickContinueButton() {
@@ -92,8 +94,22 @@ const languageExtensions = {
 
     // Iterate over the code blocks
     for (let i = 0; i < codeBlocks.length; i++) {
-      // If a "Save to File" button already exists for this block, skip it
-      if (codeBlocks[i].nextElementSibling && codeBlocks[i].nextElementSibling.classList.contains('save-to-file-button')) continue;
+      const existingButton = codeBlocks[i].nextElementSibling;
+      // If a "Save to File" button already exists for this block, update its text
+      if (existingButton && existingButton.classList.contains('save-to-file-button')) {
+        const language = codeBlocks[i].querySelector('span').textContent;
+        if (language != last_language) {
+          existingButton.innerHTML = `
+      <div class="flex w-full gap-2 items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5 flex-shrink-0">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+      </svg>
+      Download as a <b>${language}</b> File
+    </div>`;
+        }
+
+        continue;
+      }
 
 
 
@@ -112,7 +128,7 @@ const languageExtensions = {
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5 flex-shrink-0">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
     </svg>
-    Save as a <b>${language}</b> File
+    Download as a <b>${language}</b> File
   </div>`;
       button.style.width = '99%'; // Add this line
       button.style.display = 'block'; // And this line
@@ -188,7 +204,6 @@ const languageExtensions = {
         setInterval(addSaveToFileButton, result.interval || 1000);
       });
     }
-    setInterval(clickContinueButton, result.interval || 1000);
   });
 
 })();

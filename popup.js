@@ -27,5 +27,5 @@ document.getElementById("reload-btn").addEventListener('click', async function (
 // Load current settings when popup opens
 chrome.storage.sync.get(['interval', 'showSaveButton'], function (result) {
     document.getElementById("interval-input").value = result.interval || 1000;
-    document.getElementById("show-save-button").checked = result.showSaveButton !== false; // Defaults to true if not yet set
+    document.getElementById("show-save-button").checked = result.showSaveButton === true; // Defaults to true if not yet set
 });
