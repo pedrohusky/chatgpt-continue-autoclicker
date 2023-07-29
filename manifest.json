@@ -21,6 +21,10 @@
   ],
   "permissions": [
     "activeTab",
-    "notifications"
-  ]
+    "notifications",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
 }
