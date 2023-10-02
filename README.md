@@ -41,7 +41,7 @@ We prioritize your privacy and adhere to strict security standards. The extensio
 - Install the extension from the store.
 
   - Chrome Store: https://chrome.google.com/webstore/detail/chatgpt-continue-generati/ifckaoegkgefgnicdfmnkfafaeiingmp?hl=pt-BR&authuser=0
-  - Mozilla Store: *Pending approval*
+  - Mozilla Store: https://addons.mozilla.org/en-US/firefox/addon/chatgpt-auto-clicker/
 - Open the ChatGPT chat in your browser.
 - Sit back and relax while the extension automatically clicks the "Continue generating" button for you.
 
