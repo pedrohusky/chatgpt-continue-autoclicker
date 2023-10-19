@@ -51,23 +51,43 @@ let last_language = '';
 
   function clickContinueButton() {
     const buttons = document.querySelectorAll(".btn");
-
+  
     for (let i = 0; i < buttons.length; i++) {
-      if (buttons[i].innerText.includes("Continue generating") ||
-        buttons[i].innerText.includes("Continue") ||
-        buttons[i].innerText.includes(">>")) {
-        buttons[i].click();
+      const button = buttons[i];
+  
+      // Find the polygons in each button
+      const polygons = button.querySelectorAll('polygon');
+  
+      // Check if the button has the desired polygons
+      const hasDesiredPolygons = Array.from(polygons).some(polygon => {
+        const points = polygon.getAttribute('points');
+        return (
+          points === '11 19 2 12 11 5 11 19' ||
+          points === '22 19 13 12 22 5 22 19'
+        );
+      });
+  
+      if (hasDesiredPolygons) {
+        button.click();
+        break;
+      }
+  
+      // Condition to find SVG with specific class
+      const svgElement = button.querySelector("svg.-rotate-180");
+      if (svgElement) {
+        button.click();
         break;
       }
 
-      // Condition to find SVG with specific class
-      const svgElement = buttons[i].querySelector("svg.h-4.w-4.-rotate-180");
-      if (svgElement) {
-        buttons[i].click();
+      if (button.innerText.includes("Continue generating") ||
+        button.innerText.includes("Continue") ||
+        button.innerText.includes(">>")) {
+          button.click();
         break;
       }
     }
   }
+  
 
   // Function to create a download of the text
   function download(filename, text) {
