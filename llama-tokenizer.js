@@ -384,8 +384,135 @@ const encode = (
   return mergedTokenIds;
 };
 
+const decode = function (
+  tokenIds,
+  add_bos_token = true,
+  add_preceding_space = true
+) {
+  const utf8byteVals = [];
+  const startIndex = add_bos_token ? 1 : 0;
+  for (let i = startIndex; i < tokenIds.length; i++) {
+    const tokenId = tokenIds[i];
+    const tokenString = llamaTokenizer.vocabById[tokenId];
+    if (tokenString.startsWith("<0x") && tokenString.endsWith(">")) {
+      // Special case
+      const utf8byte = hexToUtf8Byte(tokenString);
+      utf8byteVals.push(utf8byte);
+    } else {
+      // Typical case
+      const utf8bytes = utf8Encoder.encode(tokenString);
+      utf8bytes.forEach((utf8Byte) => utf8byteVals.push(utf8Byte));
+    }
+  }
+  const uint8Array = new Uint8Array(utf8byteVals);
+  const decodedString = utf8Decoder.decode(uint8Array);
+  const spacesFixed = decodedString.replaceAll(
+    llamaTokenizer.vocabById[29871],
+    " "
+  );
+  // Note that preceding space must be removed here at string level, not earlier at token level, because multiple consecutive spaces are represented as single token.
+  return add_preceding_space ? spacesFixed.slice(1) : spacesFixed;
+};
+
+function runTests() {
+  function isEqual(arr1, arr2) {
+    return (
+      arr1.length === arr2.length &&
+      arr1.every(function (value, index) {
+        return value === arr2[index];
+      })
+    );
+  }
+
+  function testCase(inputString, expectedTokenIds) {
+    const actualTokens = encode(inputString, true, true, true);
+    if (!isEqual(actualTokens, expectedTokenIds)) {
+      throw `Test failed. LLaMA Tokenizer Encoder returned unexpected result: expected tokenize(${inputString}) === ${expectedTokenIds}, actual was: ${actualTokens}`;
+    }
+    if (inputString !== decode(actualTokens)) {
+      throw `Test failed. LLaMA Tokenizer Decoder returned unexpected result: expected decode(${actualTokens}) === ${inputString}, actual was: ${decode(
+        actualTokens
+      )}`;
+    }
+  }
+
+  // Simple test case
+  testCase("grabbed", [1, 2646, 1327, 287]);
+
+  // Naive implementation produces inconsistent tokenization for " grabbed", making this a good test case
+  testCase(" grabbed", [1, 29871, 2646, 1327, 287]);
+
+  // Naive implementation uses incorrect merge order for multiple consecutive space merges, making this a good test case
+  testCase("           grabbed", [1, 9651, 2646, 1327, 287]);
+
+  // Linebreaks and tabs are handled as fallback to byte tokens
+  testCase("\n", [1, 29871, 13]);
+  testCase(" \n", [1, 259, 13]);
+  testCase("	tabs				out here", [1, 29871, 12, 21175, 12, 12, 12, 12, 449, 1244]);
+
+  // Equal prio merges are performed left-to-right (fixed in 1.1.1)
+  testCase("ax\n####\nboo", [1, 4853, 13, 4136, 13, 833, 29877]);
+
+  // UTF-8 multipoint character that should be found in vocabulary
+  testCase("镇", [1, 29871, 30411]);
+
+  // UTF-8 multipoint character that should NOT be found in vocabulary, fallback to MULTIPLE byte tokens
+  testCase("🦙", [1, 29871, 243, 162, 169, 156]);
+
+  // Consecutive UTF-8 multipoint characters that are NOT found in a vocabulary and use DIFFERENT number of bytes
+  testCase("🦙Ꙋ", [1, 29871, 243, 162, 169, 156, 237, 156, 141]);
+  testCase("Ꙋ🦙", [1, 29871, 237, 156, 141, 243, 162, 169, 156]);
+
+  // Larger text input with various special characters sprinkled in
+  testCase(
+    'The llama (/ˈlɑːmə/; 🦙Spanish pronunciation: [ˈʎama]) (Lama glama) is a domesticated South American camelid, widely used as a meat and pack animal by Andean cultures since the Pre-Columbian era. Llamas are social animals and live with others as a herd. Their wool is soft and contains only a small amount of lanolin.[2] Llamas can learn simple tasks after a few repetitions. When using a pack, they can carry about 25 to 30% of their body weight for 8 to 13 km (5–8 miles).[3] The name llama (in the past also spelled "lama" or "glama") was adopted by European settlers from native Peruvians.[4] The ancestors of llamas are thought to have originated from the Great Plains of North America about 40 million years ago, and subsequently migrated to South America about three million years ago during the Great American Interchange. By the end of the last ice age (10,000–12,000 years ago), camelids were extinct in North America.[3] As of 2007, there were over seven million llamas and alpacas in South America and over 158,000 llamas and 100,000Ꙋ🦙 alpacas, descended from progenitors imported late in the 20th century, in the United States and Canada.[5] In Aymara mythology, llamas are important beings. The Heavenly Llama is said to drink water from the ocean and urinates as it rains.[6] According to Aymara eschatology, llamas will return to the water springs and lagoons where they come from at the end of time.[6]',
+    [
+      1, 450, 11148, 3304, 20374, 30176, 29880, 30426, 30215, 29885, 30184,
+      29914, 29936, 29871, 243, 162, 169, 156, 15495, 728, 11504, 11173, 362,
+      29901, 518, 30176, 31743, 3304, 2314, 313, 29931, 3304, 3144, 3304, 29897,
+      338, 263, 21849, 630, 4275, 3082, 3949, 295, 333, 29892, 17644, 1304, 408,
+      263, 27654, 322, 4870, 13019, 491, 1126, 29872, 273, 4185, 1973, 1951,
+      278, 4721, 29899, 1625, 3774, 713, 3152, 29889, 365, 5288, 294, 526, 5264,
+      15006, 322, 5735, 411, 4045, 408, 263, 902, 29881, 29889, 11275, 281,
+      1507, 338, 4964, 322, 3743, 871, 263, 2319, 5253, 310, 10906, 22878, 7226,
+      29906, 29962, 365, 5288, 294, 508, 5110, 2560, 9595, 1156, 263, 2846,
+      21159, 2187, 29889, 1932, 773, 263, 4870, 29892, 896, 508, 8677, 1048,
+      29871, 29906, 29945, 304, 29871, 29941, 29900, 29995, 310, 1009, 3573,
+      7688, 363, 29871, 29947, 304, 29871, 29896, 29941, 2383, 313, 29945,
+      29994, 29947, 7800, 467, 29961, 29941, 29962, 450, 1024, 11148, 3304, 313,
+      262, 278, 4940, 884, 805, 14356, 376, 29880, 3304, 29908, 470, 376, 3820,
+      3304, 1159, 471, 16356, 491, 7824, 3604, 9306, 515, 7531, 25493, 1403,
+      550, 7226, 29946, 29962, 450, 19525, 943, 310, 11829, 294, 526, 2714, 304,
+      505, 3978, 630, 515, 278, 7027, 13494, 1144, 310, 4644, 6813, 1048, 29871,
+      29946, 29900, 7284, 2440, 8020, 29892, 322, 17602, 9725, 630, 304, 4275,
+      6813, 1048, 2211, 7284, 2440, 8020, 2645, 278, 7027, 3082, 4124, 3167,
+      29889, 2648, 278, 1095, 310, 278, 1833, 14890, 5046, 313, 29896, 29900,
+      29892, 29900, 29900, 29900, 29994, 29896, 29906, 29892, 29900, 29900,
+      29900, 2440, 8020, 511, 3949, 295, 4841, 892, 1294, 5562, 297, 4644, 6813,
+      7226, 29941, 29962, 1094, 310, 29871, 29906, 29900, 29900, 29955, 29892,
+      727, 892, 975, 9881, 7284, 11829, 294, 322, 394, 29886, 562, 294, 297,
+      4275, 6813, 322, 975, 29871, 29896, 29945, 29947, 29892, 29900, 29900,
+      29900, 11829, 294, 322, 29871, 29896, 29900, 29900, 29892, 29900, 29900,
+      29900, 237, 156, 141, 243, 162, 169, 156, 394, 29886, 562, 294, 29892,
+      5153, 2760, 515, 410, 1885, 17259, 19673, 5683, 297, 278, 29871, 29906,
+      29900, 386, 6462, 29892, 297, 278, 3303, 3900, 322, 7400, 7226, 29945,
+      29962, 512, 319, 962, 2518, 22082, 3002, 29892, 11829, 294, 526, 4100,
+      367, 886, 29889, 450, 22977, 368, 365, 29880, 3304, 338, 1497, 304, 13748,
+      4094, 515, 278, 23474, 322, 5065, 262, 1078, 408, 372, 1153, 1144, 7226,
+      29953, 29962, 7579, 304, 319, 962, 2518, 831, 13496, 3002, 29892, 11829,
+      294, 674, 736, 304, 278, 4094, 7689, 886, 322, 301, 4425, 787, 988, 896,
+      2041, 515, 472, 278, 1095, 310, 931, 7226, 29953, 29962,
+    ]
+  );
+
+  console.log("LLaMA Tokenizer tests passed successfully.");
+  return true;
+}
+
 function initializeLlamaTokenizer() {
   llamaTokenizer.encode = encode;
+  llamaTokenizer.decode = decode;
+  llamaTokenizer.runTests = runTests;
   // Array where index represents tokenId, value represents tokenString
   llamaTokenizer.vocabById = decodeVocabulary(vocab_base64);
   // Map where key represents tokenString, value represents tokenId
@@ -405,170 +532,25 @@ const merges_binary =
 
 const llama = initializeLlamaTokenizer();
 
-const languageExtensions = {
-  javascript: ".js",
-  python: ".py",
-  java: ".java",
-  c: ".c",
-  cpp: ".cpp",
-  php: ".php",
-  ruby: ".rb",
-  swift: ".swift",
-  go: ".go",
-  rust: ".rs",
-  shell: ".sh",
-  typescript: ".ts",
-  csharp: ".cs",
-  kotlin: ".kt",
-  scala: ".scala",
-  groovy: ".groovy",
-  perl: ".pl",
-  lua: ".lua",
-  r: ".R",
-  matlab: ".m",
-  html: ".html",
-  css: ".css",
-  json: ".json",
-  xml: ".xml",
-  bash: ".sh",
-  sql: ".sql",
-  markdown: ".md",
-  text: ".txt",
-  yaml: ".yaml",
-  dockerfile: "Dockerfile",
-  powershell: ".ps1",
-  batch: ".bat",
-  vb: ".vb",
-  fsharp: ".fs",
-  haskell: ".hs",
-  julia: ".jl",
-  "objective-c": ".m",
-  fortran: ".f90",
-  prolog: ".pl",
-  vba: ".vba",
-  cobol: ".cbl",
-  lisp: ".lisp",
-  scheme: ".scm",
-  assembly: ".asm",
-};
-
 let lastKnownMessages = [];
 
-// Maximum token limit
+// Set your maximum token limit
 const maxTokens = 4096;
-
-let last_language = "";
 
 (function () {
   let progressBar = null;
-  let indicatorLineAbove = null;
-  let lastColor = null;
-  let textArea = null;
-  const tooltip = createTooltip();
-  document.body.appendChild(tooltip);
 
   function createTooltip() {
-    // Create a tooltip container
     const tooltip = document.createElement("div");
-    tooltip.classList.add("flex", "items-center", "md:items-end");
-
-    // Create the button and its inner structure
-    const button = document.createElement("button");
-    button.classList.add(
-      "btn",
-      "relative",
-      "btn-neutral",
-      "-z-0",
-      "whitespace-nowrap",
-      "border-0",
-      "md:border"
-    );
-    button.setAttribute("as", "button");
-
-    const buttonContent = document.createElement("div");
-    buttonContent.classList.add(
-      "flex",
-      "w-full",
-      "gap-2",
-      "items-center",
-      "justify-center"
-    );
-
-    const svg = document.createElement("svg");
-    svg.setAttribute("stroke", "currentColor");
-    svg.setAttribute("fill", "none");
-    svg.setAttribute("stroke-width", "2");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("stroke-linecap", "round");
-    svg.setAttribute("stroke-linejoin", "round");
-    svg.classList.add("flex-shrink-0", "icon-xs");
-    svg.setAttribute("height", "1em");
-    svg.setAttribute("width", "1em");
-    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-
-    const polyline1 = document.createElement("polyline");
-    polyline1.setAttribute("points", "1 4 1 10 7 10");
-
-    const polyline2 = document.createElement("polyline");
-    polyline2.setAttribute("points", "23 20 23 14 17 14");
-
-    const path = document.createElement("path");
-    path.setAttribute(
-      "d",
-      "M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"
-    );
-
-    // Append the elements to build the structure
-    svg.appendChild(polyline1);
-    svg.appendChild(polyline2);
-    svg.appendChild(path);
-
-    buttonContent.appendChild(svg);
-    buttonContent.appendChild(document.createTextNode("Regenerate"));
-    button.appendChild(buttonContent);
-    tooltip.appendChild(button);
-    tooltip.style.position = "absolute";
-    tooltip.style.top = "0"; // Adjust as needed
-    tooltip.style.left = "0"; // Adjust as needed
-    tooltip.style.backgroundColor = "rgb(52, 53, 65)"; // Set the background color
-    tooltip.style.borderRadius = "4px"; // Set the border radius
-    tooltip.style.border = "0.1px solid #fff"; // Set the border
-    tooltip.style.padding = "4px 8px"; // Set the padding
+    tooltip.classList.add("tooltip");
     tooltip.style.display = "none";
-
-    // Return the constructed tooltip
+    tooltip.style.position = "absolute";
+    tooltip.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+    tooltip.style.color = "#fff";
+    tooltip.style.padding = "5px";
+    tooltip.style.borderRadius = "4px";
+    tooltip.style.zIndex = "1000";
     return tooltip;
-  }
-
-  function updateTheme() {
-    if (!textArea) {
-      return;
-    }
-
-    setTopProperty();
-
-    if (
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-      if ("rgb(32, 33, 35)" == lastColor) {
-        return;
-      }
-      indicatorLineAbove.style.backgroundColor = "rgb(32, 33, 35)"; // Dark theme color
-
-      tooltip.style.backgroundColor = "rgb(32, 33, 35)"; // Set the background color
-      tooltip.style.border = "0.1px solid rgb(236, 236, 241)"; // Set the border
-      lastColor = indicatorLineAbove.style.backgroundColor;
-    } else {
-      if ("rgb(236, 236, 241)" == lastColor) {
-        return;
-      }
-      indicatorLineAbove.style.backgroundColor = "rgb(236, 236, 241)"; // Light theme color
-      // Set the background color to transparent
-      tooltip.style.backgroundColor = "#fff"; // Set the background color
-      tooltip.style.border = "0.1px solid rgb(32, 33, 35)"; // Set the border
-      lastColor = indicatorLineAbove.style.backgroundColor;
-    }
   }
 
   function updateTooltipPosition(event) {
@@ -579,49 +561,36 @@ let last_language = "";
     tooltip.style.top = y + "px";
   }
 
+  const tooltip = createTooltip();
+  document.body.appendChild(tooltip);
+
   function addProgressBarToUI() {
-    textArea = document.getElementById("prompt-textarea");
+    const textArea = document.getElementById("prompt-textarea");
 
     // Get the parent element of the textArea
-    let parentElement = textArea.nextElementSibling;
+    const parentElement = textArea.parentElement;
 
     // Check if the progress bar already exists
-    if (document.querySelector(".progress-indicator")) {
+    if (parentElement.querySelector(".progress-bar")) {
+      console.log("Progress bar already exists");
       return; // Exit if it already exists
     }
 
-    lastColor = null;
-
-    // Create the indicator line above the text area
-    indicatorLineAbove = document.createElement("div");
-    indicatorLineAbove.classList.add("progress-indicator");
-    indicatorLineAbove.style.position = "inital";
-
-    indicatorLineAbove.style.marginTop = "5px";
-    indicatorLineAbove.style.marginBottom = "5px";
-    indicatorLineAbove.style.marginRight = "9px";
-    indicatorLineAbove.style.marginLeft = "9px";
-    indicatorLineAbove.style.borderRadius = "25px";
-    indicatorLineAbove.style.height = "8.5px";
-
-    // Create the progress bar inside the indicator
+    // Create the progress bar element
     progressBar = document.createElement("div");
     progressBar.classList.add("progress-bar");
+
+    // Set the inline styles for the progress bar
     progressBar.style.width = "0%";
-    progressBar.style.maxWidth = "99.8%";
-    progressBar.style.marginTop = "0.85px";
-    progressBar.style.marginLeft = "1px";
-    progressBar.style.height = "6.5px";
+    progressBar.style.height = "8px";
     progressBar.style.backgroundColor = "red";
     progressBar.style.transition = "width 0.3s ease-in-out";
-    progressBar.style.borderRadius = "25px";
+    progressBar.style.position = "absolute";
+    progressBar.style.left = "0";
+    progressBar.style.top = "0";
 
-    // Append the progress bar as a child of the indicator
-    indicatorLineAbove.appendChild(progressBar);
-
-    console.log(indicatorLineAbove);
-
-    insertAfter(indicatorLineAbove, parentElement);
+    // Set the overflow property of the parent element to "hidden"
+    parentElement.style.overflow = "hidden";
 
     // Add mouseover and mouseout event handlers for the progress bar
     progressBar.addEventListener("mouseover", () => {
@@ -632,48 +601,12 @@ let last_language = "";
 
     progressBar.addEventListener("mouseout", () => {
       tooltip.style.display = "none";
-      // Remove the event listener when the mouse is out
+      // Remove the event listener when mouse is out
       document.removeEventListener("mousemove", updateTooltipPosition);
     });
 
-    // Add mouseover and mouseout event handlers for the indicator
-    indicatorLineAbove.addEventListener("mouseover", () => {
-      tooltip.style.display = "block";
-      // Calculate the position of the tooltip relative to the mouse cursor
-      document.addEventListener("mousemove", updateTooltipPosition);
-    });
-
-    indicatorLineAbove.addEventListener("mouseout", () => {
-      tooltip.style.display = "none";
-      // Remove the event listener when the mouse is out
-      document.removeEventListener("mousemove", updateTooltipPosition);
-    });
-
-    updateTheme();
-  }
-
-  function setTopProperty() {
-    if (!textArea) {
-      return;
-    }
-
-    // Get the parent element of the textArea
-    let parentElement = textArea.nextElementSibling;
-
-    if (parentElement.className.includes("progress-indicator")) {
-      parentElement = textArea.nextElementSibling.nextElementSibling;
-    }
-    console.log(parentElement);
-    const viewportWidth = window.innerWidth;
-
-    // Determine the appropriate top value based on the viewport width
-    let topValue = 25; // Default value for desktop
-    if (viewportWidth <= 767) {
-      topValue = 22; // Mobile value
-    }
-
-    // Set the top property of the parent element
-    parentElement.style.bottom = topValue + "px";
+    // Insert the progress bar after the prompt-textarea
+    insertAfter(progressBar, textArea);
   }
 
   // Function to insert an element after another element
@@ -681,9 +614,9 @@ let last_language = "";
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
   }
 
+  // Simulate progress (for demonstration purposes)
   function updateTokensAmount() {
     const chatMessages = getChatMessagesText(); // Replace with your logic to retrieve chat messages
-    console.log(chatMessages);
     if (chatMessages == lastKnownMessages) {
       return;
     }
@@ -695,27 +628,19 @@ let last_language = "";
       cumulativeTokens += tokenCount;
     });
 
+    // Ensure the cumulativeTokens does not exceed the maxTokens
+    cumulativeTokens = cumulativeTokens;
+
     // Update the progress bar
     if (cumulativeTokens >= maxTokens) {
       // Update the tooltip text and position
+      tooltip.textContent = `Tokens: ${cumulativeTokens} have exceeded the context window. GPT may not be able to complete the task. You can open a new chat to use the full context again`;
       progressBar.style.width = "100%";
-      progressBar.style.backgroundColor = "red"; // Set to red at 100%
-      if (cumulativeTokens >= 8168) {
-        tooltip.textContent = `Tokens: ${cumulativeTokens} have exceeded the hard context window (8168 tokens). I recommend opening a new chat. It won't remember the first messages.`;
-      } else {
-        // Update the tooltip text and position
-        tooltip.textContent = `Tokens: ${cumulativeTokens} have exceeded the context window. GPT may not be able to complete the task. You can open a new chat to use the full context again`;
-      }
     } else {
       // Update the tooltip text and position
       tooltip.textContent = `Tokens: ${cumulativeTokens}`;
       const width = (cumulativeTokens / maxTokens) * 100;
       progressBar.style.width = width + "%";
-
-      // Dynamically change the background color based on the percentage
-      progressBar.style.backgroundColor = `hsl(${
-        120 * (1 - width / 100)
-      }, 100%, 50%)`;
     }
 
     lastKnownMessages = chatMessages;
@@ -746,212 +671,15 @@ let last_language = "";
     );
 
     chatMessageElements.forEach((element) => {
-      let message = "";
-      if (element.textContent.startsWith("ChatGPT")) {
-        // Replace the first occurrence of "ChatGPT" with ""
-        message = element.textContent.substring(7);
-      }
-      messages.push(message);
+      messages.push(element.textContent);
     });
 
     return messages;
   }
 
-  function clickContinueButton() {
-    const buttons = document.querySelectorAll(".btn");
-
-    for (let i = 0; i < buttons.length; i++) {
-      const button = buttons[i];
-
-      // Find the polygons in each button
-      const polygons = button.querySelectorAll("polygon");
-
-      // Check if the button has the desired polygons
-      const hasDesiredPolygons = Array.from(polygons).some((polygon) => {
-        const points = polygon.getAttribute("points");
-        return (
-          points === "11 19 2 12 11 5 11 19" ||
-          points === "22 19 13 12 22 5 22 19"
-        );
-      });
-
-      if (hasDesiredPolygons) {
-        button.click();
-        break;
-      }
-
-      // Condition to find SVG with specific class
-      const svgElement = button.querySelector("svg.-rotate-180");
-      if (svgElement) {
-        button.click();
-        break;
-      }
-
-      if (
-        button.innerText.includes("Continue generating") ||
-        button.innerText.includes("Continue") ||
-        button.innerText.includes(">>")
-      ) {
-        button.click();
-        break;
-      }
-    }
-  }
-
-  // Function to create a download of the text
-  function download(filename, text) {
-    // Split the text by new line character
-    var lines = text.replace("javascriptCopy code", "").split("\n");
-
-    // Join the remaining lines back together
-    var filteredText = lines.join("\n");
-
-    var element = document.createElement("a");
-    element.setAttribute(
-      "href",
-      "data:text/plain;charset=utf-8," + encodeURIComponent(filteredText)
-    );
-    element.setAttribute("download", filename);
-    element.style.display = "none";
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  }
-
-  // Function to add a "Save to File" button
-  function addSaveToFileButton() {
-    // Query for the code blocks
-    const codeBlocks = document.querySelectorAll("pre");
-
-    // Iterate over the code blocks
-    for (let i = 0; i < codeBlocks.length; i++) {
-      const existingButton = codeBlocks[i].nextElementSibling;
-      // If a "Save to File" button already exists for this block, update its text
-      if (
-        existingButton &&
-        existingButton.classList.contains("save-to-file-button")
-      ) {
-        const language = codeBlocks[i].querySelector("span").textContent;
-        if (language != last_language) {
-          last_language = language;
-          existingButton.innerHTML = `
-      <div class="flex w-full gap-2 items-center justify-center">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5 flex-shrink-0">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-      </svg>
-    </div>`;
-        }
-
-        continue;
-      }
-
-      try {
-        const firstSpan = codeBlocks[i].querySelector("span");
-
-        // Get the programming language of the code block
-        const language = firstSpan.textContent;
-
-        // Create the "Save to File" button
-        const button = document.createElement("button");
-        button.className =
-          "btn relative btn-neutral whitespace-nowrap -z-0 border-0 md:border save-to-file-button";
-
-        button.innerHTML = `
-    <div class="flex w-full gap-2 items-center justify-center">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5 flex-shrink-0">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-    </svg>
-  </div>`;
-
-        button.style.display = "block"; // Display the button as a block element (takes full width)
-
-        // Use flexbox to center the button horizontally
-        button.style.marginLeft = "auto";
-        button.style.marginRight = "auto";
-
-        button.style.marginBottom = "3px";
-
-        // When the button is clicked
-        button.addEventListener("click", function () {
-          // Ask the user for the filename
-          let filename = prompt("Enter the name for the " + language + " file");
-
-          // If the user didn't press Cancel
-          if (filename !== null) {
-            // Clone the pre element
-            const clonedPre = codeBlocks[i].cloneNode(true);
-
-            // Get all button elements from the clone and remove them
-            const buttons = clonedPre.querySelectorAll("button");
-            buttons.forEach((button) => button.parentNode.removeChild(button));
-            // Get the first span element from the clone and remove it
-            const firstSpan = clonedPre.querySelector("span");
-
-            // Get the programming language of the code block
-            const language = firstSpan.textContent;
-
-            let extension = "";
-
-            if (filename.includes(".")) {
-              filename = filename.split(".");
-              extension = "." + filename[1];
-              filename = filename[0];
-            }
-
-            // Remove the span
-            if (firstSpan) firstSpan.parentNode.removeChild(firstSpan);
-
-            extension = languageExtensions[language] || extension;
-
-            const final_name = filename + extension;
-
-            // Now the text content should not include the text of any button or the first span
-            const code = clonedPre.textContent;
-            // Download the code as a text file
-            download(final_name, code);
-          }
-        });
-
-        // Add the button right below the pre element
-        codeBlocks[i].parentElement.insertBefore(
-          button,
-          codeBlocks[i].nextElementSibling
-        );
-      } catch (error) {
-        continue;
-      }
-    }
-  }
-  let showSaveButton = false;
-  chrome.storage.sync.get(["showSaveButton"], function (result) {
-    addSaveToFileButton();
-    showSaveButton = result.showSaveButton;
-  });
   // Load interval setting and start auto-clicking
   chrome.storage.sync.get(["interval"], function (result) {
-    setInterval(() => {
-      clickContinueButton();
-      updateTheme();
-    }, result.interval || 1000);
-
-    setInterval(() => {
-      updateTokensAmount();
-      if (showSaveButton) {
-        addSaveToFileButton();
-      }
-    }, 2000);
+    setInterval(addProgressBarToUI, result.interval || 1000);
+    setInterval(updateTokensAmount, result.interval || 1500);
   });
-
-  const targetNode = document.body; // You can change the target element
-
-  // Configure the mutation observer
-  const observer = new MutationObserver(addProgressBarToUI);
-
-  const observerConfig = {
-    childList: true, // Watch for changes in child elements
-    subtree: true, // Watch for changes in all descendants
-  };
-
-  // Start observing changes
-  observer.observe(targetNode, observerConfig);
 })();
