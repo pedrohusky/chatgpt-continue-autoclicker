@@ -695,15 +695,6 @@ const maxTokens = 4096;
       [...chatMessagesSet].every((message) => lastKnownMessagesSet.has(message))
     ) {
       return;
-    } else {
-      // Calculate the differences between chatMessagesSet and lastKnownMessagesSet
-      const addedMessages = [...chatMessagesSet].filter(
-        (message) => !lastKnownMessagesSet.has(message)
-      );
-      const removedMessages = [...lastKnownMessagesSet].filter(
-        (message) => !chatMessagesSet.has(message)
-      );
-
     }
     let cumulativeTokens = 0;
 
