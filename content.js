@@ -452,544 +452,402 @@ const languageExtensions = {
   assembly: ".asm",
 };
 
-// Maximum token limit
-const maxTokens = 4096;
+// Constants for default interval and maximum tokens
+const DEFAULT_INTERVAL = 1000;
+const MAX_TOKENS = 4096;
 
-(function () {
-  let progressBar = null;
-  let indicatorLineAbove = null;
-  let lastColor = null;
-  let textArea = null;
-  let interval = null;
-  let showTokens = null;
-  let showSaveButton = null;
-  let lastKnownMessages = [];
+// State object to store various properties
+const state = {
+  progressBar: null,
+  indicatorLineAbove: null,
+  lastColor: null,
+  textArea: null,
+  interval: DEFAULT_INTERVAL,
+  showSaveButton: null,
+  showTokens: null,
+  lastKnownMessages: [],
+  tooltip: createTooltip(),
+};
 
-  const tooltip = createTooltip();
-  document.body.appendChild(tooltip);
+// Append the tooltip to the document body
+document.body.appendChild(state.tooltip);
 
-  chrome.storage.sync.get(
-    ["interval", "showSaveButton", "showTokens"],
-    function (result) {
-      interval = result.interval || 1000;
-      showSaveButton = result.showSaveButton || false;
-      if (showSaveButton) {
-        addSaveToFileButton();
-      }
-      showTokens = result.showTokens !== false;
-    }
-  );
-
-  function createTooltip() {
-    // Create a tooltip container
-    const tooltip = document.createElement("div");
-    // Add shadow to the tooltip
-    tooltip.style.boxShadow = "0px 5px 25px rgba(0, 0, 0, 0.3)";
-
-    tooltip.style.position = "absolute";
-    tooltip.style.maxWidth = "50%";
-    tooltip.style.top = "0"; // Adjust as needed
-    tooltip.style.left = "0"; // Adjust as needed
-    tooltip.style.backgroundColor = "rgb(52, 53, 65)"; // Set the background color
-    tooltip.style.borderRadius = "4px"; // Set the border radius
-    tooltip.style.border = "0.01px solid #fff"; // Set the border
-    tooltip.style.padding = "4px 8px"; // Set the padding
-    tooltip.style.display = "none";
-    // Apply a fade-in transition
-    tooltip.style.opacity = "0";
-    tooltip.style.transition = "opacity 0.3s";
-
-    // Return the constructed tooltip
-    return tooltip;
-  }
-
-  function updateTheme() {
-    if (!textArea) {
-      return;
-    }
-
-    setTopProperty();
-
-    if (
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-      if ("rgb(52, 53, 65)" == lastColor) {
-        return;
-      }
-      indicatorLineAbove.style.backgroundColor = "rgb(52, 53, 65)"; // Dark theme color
-
-      tooltip.style.backgroundColor = "rgb(52, 53, 65)"; // Set the background color
-      tooltip.style.border = "0.01px solid rgb(86, 88, 105)"; // Set the border
-      lastColor = indicatorLineAbove.style.backgroundColor;
-    } else {
-      if ("rgb(236, 236, 241)" == lastColor) {
-        return;
-      }
-      indicatorLineAbove.style.backgroundColor = "rgb(236, 236, 241)"; // Light theme color
-      // Set the background color to transparent
-      tooltip.style.backgroundColor = "#fff"; // Set the background color
-      tooltip.style.border = "0.01px solid rgb(217, 217, 227)"; // Set the border
-      lastColor = indicatorLineAbove.style.backgroundColor;
-    }
-  }
-
-  function updateTooltipPosition(event) {
-    // Position the tooltip above the mouse cursor
-    const x = event.clientX - 20; // Offset for better visual alignment
-    const y = event.clientY - 10 - tooltip.clientHeight; // Offset to place the tooltip above the cursor
-    tooltip.style.left = x + "px";
-    tooltip.style.top = y + "px";
-  }
-
-  let progressInterval;
-  let tokenInterval;
-
-  function addProgressBarToUI() {
-    if (!showTokens) {
-      return;
-    }
-    textArea = document.getElementById("prompt-textarea");
-
-    // Get the parent element of the textArea
-    let parentElement = textArea.nextElementSibling;
-
-    // Check if the progress bar already exists
-    if (document.querySelector(".progress-indicator")) {
-      return; // Exit if it already exists
-    }
-
-    lastColor = null;
-
-    // Create the indicator line above the text area
-    indicatorLineAbove = document.createElement("div");
-    indicatorLineAbove.classList.add("progress-indicator");
-    indicatorLineAbove.style.position = "inital";
-
-    indicatorLineAbove.style.boxShadow = "0px 1px 2px rgba(0, 0, 0, 0.3)";
-
-    indicatorLineAbove.style.marginTop = "5px";
-    indicatorLineAbove.style.marginBottom = "5px";
-    indicatorLineAbove.style.marginRight = "9px";
-    indicatorLineAbove.style.marginLeft = "9px";
-    indicatorLineAbove.style.borderRadius = "25px";
-    indicatorLineAbove.style.height = "6.5px";
-
-    // Create the progress bar inside the indicator
-    progressBar = document.createElement("div");
-    progressBar.classList.add("progress-bar");
-    progressBar.style.width = "0%";
-    const marginValue = 6.5 * 0.1;
-    // Set the width of the progress bar to account for the margins
-    let progressBarWidth = 100 - marginValue / 2.5; // Subtract the margins
-
-    progressBar.style.maxWidth = progressBarWidth + "%";
-    progressBar.style.margin = `${marginValue}px`;
-    progressBar.style.height = "80%";
-    progressBar.style.backgroundColor = "red";
-    progressBar.style.transition = "width 0.3s ease-in-out";
-    progressBar.style.borderRadius = "25px";
-
-    // Append the progress bar as a child of the indicator
-    indicatorLineAbove.appendChild(progressBar);
-
-    insertAfter(indicatorLineAbove, parentElement);
-
-    // Add mouseover and mouseout event handlers for the progress bar
-    progressBar.addEventListener("mouseover", () => {
-      tooltip.style.display = "block";
-      tooltip.style.opacity = 1; // Fade in the tooltip
-      document.addEventListener("mousemove", updateTooltipPosition);
-    });
-
-    progressBar.addEventListener("mouseout", () => {
-      tooltip.style.opacity = 0; // Fade out the tooltip
-      // After fading out, hide the tooltip (if needed, you can use a transitionend event)
-      document.removeEventListener("mousemove", updateTooltipPosition);
-    });
-
-    // Add mouseover and mouseout event handlers for the indicator
-    indicatorLineAbove.addEventListener("mouseover", () => {
-      tooltip.style.display = "block";
-      tooltip.style.opacity = 1; // Fade in the tooltip
-      document.addEventListener("mousemove", updateTooltipPosition);
-    });
-
-    indicatorLineAbove.addEventListener("mouseout", () => {
-      tooltip.style.opacity = 0; // Fade out the tooltip
-      // After fading out, hide the tooltip (if needed, you can use a transitionend event)
-      document.removeEventListener("mousemove", updateTooltipPosition);
-    });
-
-    if (progressInterval) {
-      clearInterval(progressInterval);
-    }
-    if (tokenInterval) {
-      clearInterval(tokenInterval);
-    }
-
-    updateTheme();
-
-    if (showSaveButton) {
+// Load settings from Chrome storage and set state properties
+chrome.storage.sync.get(
+  ["interval", "showSaveButton", "showTokens"],
+  function (result) {
+    state.interval = result.interval || 1000;
+    state.showSaveButton = result.showSaveButton || false;
+    if (state.showSaveButton) {
       addSaveToFileButton();
     }
-
-    // Set the new intervals
-    progressInterval = setInterval(() => {
-      clickContinueButton();
-      updateTheme();
-    }, interval || 1000);
-
-    tokenInterval = setInterval(() => {
-      updateTokensAmount();
-      if (showSaveButton) {
-        addSaveToFileButton();
-      }
-    }, 2000);
-
-    // Update the tooltip text and position
-    tooltip.innerHTML = `Tokens: <span style="color: hsl(${
-      120 * 1
-    }, 100%, 30%);">0</span>/4096`;
+    state.showTokens = result.showTokens !== false;
   }
+);
 
-  function setTopProperty() {
-    if (!textArea) {
-      return;
-    }
+// Function to create the tooltip element
+function createTooltip() {
+  const tooltip = document.createElement("div");
+  // Set tooltip styles
+  tooltip.style.boxShadow = "0px 5px 25px rgba(0, 0, 0, 0.3)";
+  tooltip.style.position = "absolute";
+  tooltip.style.maxWidth = "50%";
+  tooltip.style.top = "0";
+  tooltip.style.left = "0";
+  tooltip.style.backgroundColor = "rgb(52, 53, 65)";
+  tooltip.style.borderRadius = "4px";
+  tooltip.style.border = "0.01px solid #fff";
+  tooltip.style.padding = "4px 8px";
+  tooltip.style.display = "none";
+  tooltip.style.opacity = "0";
+  tooltip.style.transition = "opacity 0.3s";
+  return tooltip;
+}
 
-    // Get the parent element of the textArea
-    let parentElement = textArea.nextElementSibling;
+// Function to update the theme based on user preferences
+function updateTheme() {
+  // Check if textArea is available
+  if (!state.textArea) return;
+  setTopProperty();
+  const darkTheme =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const themeColor = darkTheme ? "rgb(52, 53, 65)" : "rgb(236, 236, 241)";
 
-    if (parentElement.className.includes("progress-indicator")) {
-      parentElement = textArea.nextElementSibling.nextElementSibling;
-    }
-    const viewportWidth = window.innerWidth;
+  if (themeColor === state.lastColor) return;
 
-    // Determine the appropriate top value based on the viewport width
-    let topValue = 26; // Default value for desktop
-    if (viewportWidth <= 767) {
-      topValue = 20; // Mobile value
-    }
+  state.indicatorLineAbove.style.backgroundColor = themeColor;
+  state.tooltip.style.backgroundColor = themeColor;
+  state.tooltip.style.border =
+    "0.01px solid " + (darkTheme ? "rgb(86, 88, 105)" : "rgb(217, 217, 227)");
+  state.lastColor = state.indicatorLineAbove.style.backgroundColor;
+}
 
-    // Set the top property of the parent element
-    parentElement.style.bottom = topValue + "px";
+// Function to update the position of the tooltip based on mouse events
+function updateTooltipPosition(event) {
+  const x = event.clientX - 20;
+  const y = event.clientY - 10 - state.tooltip.clientHeight;
+  state.tooltip.style.left = x + "px";
+  state.tooltip.style.top = y + "px";
+}
+
+// Function to add a progress bar to the UI
+function addProgressBarToUI() {
+  if (!state.showTokens) return;
+  state.textArea = document.getElementById("prompt-textarea");
+  const parentElement = state.textArea.nextElementSibling;
+
+  if (document.querySelector(".progress-indicator")) return;
+
+  state.lastColor = null;
+  state.indicatorLineAbove = document.createElement("div");
+  state.indicatorLineAbove.classList.add("progress-indicator");
+  state.indicatorLineAbove.style.position = "inital";
+
+  // Set indicator line styles
+  state.indicatorLineAbove.style.boxShadow = "0px 1px 2px rgba(0, 0, 0, 0.3)";
+  state.indicatorLineAbove.style.marginTop = "5px";
+  state.indicatorLineAbove.style.marginBottom = "5px";
+  state.indicatorLineAbove.style.marginRight = "9px";
+  state.indicatorLineAbove.style.marginLeft = "9px";
+  state.indicatorLineAbove.style.borderRadius = "25px";
+  state.indicatorLineAbove.style.height = "6.5px";
+
+  // Create progress bar element
+  state.progressBar = document.createElement("div");
+  state.progressBar.classList.add("progress-bar");
+  state.progressBar.style.width = "0%";
+  state.progressBar.style.maxWidth = "99.9%"; // Slight adjustment
+  state.progressBar.style.margin = "0.1%";
+  state.progressBar.style.height = "80%";
+  state.progressBar.style.backgroundColor = "red";
+  state.progressBar.style.transition = "width 0.3s ease-in-out";
+  state.progressBar.style.borderRadius = "25px";
+
+  state.indicatorLineAbove.appendChild(state.progressBar);
+  insertAfter(state.indicatorLineAbove, parentElement);
+
+  addEventListeners();
+  updateTheme();
+
+  // Set intervals for updating progress bar and tokens amount
+  setInterval(updateProgressBar, state.interval);
+  setInterval(updateTokensAmount, 2000);
+  updateTooltip("Tokens: <span style='color: hsl(120, 100%, 30%);'>0</span>/4096");
+}
+
+// Function to set the 'top' property for a UI element
+function setTopProperty() {
+  if (!state.textArea) return;
+  let parentElement = state.textArea.nextElementSibling;
+  if (parentElement.className.includes("progress-indicator")) {
+    parentElement = state.textArea.nextElementSibling.nextElementSibling;
   }
+  parentElement.style.bottom = window.innerWidth <= 767 ? "20px" : "26px";
+}
 
-  // Function to insert an element after another element
-  function insertAfter(newNode, referenceNode) {
-    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-  }
+// Function to insert a new node after a reference node
+function insertAfter(newNode, referenceNode) {
+  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}
 
-  async function updateTokensAmount() {
-    if (!textArea) {
-      return;
-    }
-    const chatMessages = await getChatMessagesText();
-
-    const chatMessagesSet = new Set(chatMessages);
-    const lastKnownMessagesSet = new Set(lastKnownMessages);
-
-    if (
-      chatMessagesSet.size === lastKnownMessagesSet.size &&
-      [...chatMessagesSet].every((message) => lastKnownMessagesSet.has(message))
-    ) {
-      return;
-    }
-    let cumulativeTokens = 0;
-
-    // Calculate the cumulative token count
-    chatMessages.forEach((message) => {
-      const tokenCount = countTokens(message);
-      cumulativeTokens += tokenCount;
-    });
-
-    // Update the progress bar
-    if (cumulativeTokens >= maxTokens) {
-      // Update the tooltip text and position
-      progressBar.style.width = "100%";
-      progressBar.style.backgroundColor = "red"; // Set to red at 100%
-      if (cumulativeTokens >= 8168) {
-        tooltip.innerHTML = `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>
-    You have exceeded the hard context window (8168 tokens).<br>I recommend opening a new chat. It won't remember the first messages.`;
-      } else {
-        // Update the tooltip text and position
-        tooltip.innerHTML = `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>
-    You have exceeded the context window. GPT may not be able to complete the task.<br>You can open a new chat to use the full context again`;
-      }
-    } else {
-      const width = (cumulativeTokens / maxTokens) * 100;
-
-      // Update the tooltip text and position
-      tooltip.innerHTML = `Tokens: <span style="color: hsl(${
-        120 * (1 - width / 100)
-      }, 100%, 30%);">${cumulativeTokens}</span>/4096`;
-      progressBar.style.width = width + "%";
-
-      // Dynamically change the background color based on the percentage
-      progressBar.style.backgroundColor = `hsl(${
-        120 * (1 - width / 100)
-      }, 100%, 50%)`;
-    }
-
-    lastKnownMessages = chatMessages;
-  }
-
-  // Function to estimate the token count in a text using tiktoken library
-  function countTokens(text) {
-    if (text == "") {
-      return 0;
-    }
-    // Encode the input using the llama-tokenizer-js module
-    let tokens = llamaTokenizer.encode(text);
-    // Get the number of tokens from the encoded array
-    let numTokens;
-    if (tokens.length < 4096) {
-      // In my tests, reducing by 15% makes the llama tokens similar to the GPT tokens. Also, beyond 5000 tokens, it doesn't work. Then we fallback to the real llama number that is similar to the GPT in a big text
-      numTokens = Math.round(tokens.length * 0.85);
-    } else {
-      numTokens = tokens.length;
-    }
-    return numTokens;
-  }
-
-  // Function to get chat messages (replace this with your logic)
-  async function getChatMessagesText() {
-    const messages = [];
-    const chatMessageElements = document.querySelectorAll(
-      ".group.w-full.text-token-text-primary"
-    );
-
-    chatMessageElements.forEach((element) => {
-      const clonedElement = element.cloneNode(true);
-      const codeBlocks = clonedElement.querySelectorAll("pre");
-      codeBlocks.forEach((codeBlock) => {
-      // Remove all button elements from the message
-      const buttons = codeBlock.querySelectorAll("button");
-      const lastButton = buttons[buttons.length - 1].cloneNode(true);
-      buttons.forEach((button) => {
-        button.remove();
-      });
-
-      // Remove the first span element from the message
-      const firstSpan = codeBlock.querySelector("span");
-      firstSpan.innerHTML = "\n\n";
-      lastButton.innerHTML = "\n\n";
-      })
-      
-      // Extract and clean the text content of the element
-      let message = clonedElement.innerText.trim();
-
-      if (message.startsWith("ChatGPT")) {
-        // Replace the first occurrence of "ChatGPT" with ""
-        message = message.substring(7);
-      }
-
-      messages.push(message);
-    });
-
-    return messages;
-  }
-
-  function clickContinueButton() {
-    const buttons = document.querySelectorAll(".btn");
-
-    for (let i = 0; i < buttons.length; i++) {
-      const button = buttons[i];
-
-      // Find the polygons in each button
-      const polygons = button.querySelectorAll("polygon");
-
-      // Check if the button has the desired polygons
-      const hasDesiredPolygons = Array.from(polygons).some((polygon) => {
-        const points = polygon.getAttribute("points");
-        return (
-          points === "11 19 2 12 11 5 11 19" ||
-          points === "22 19 13 12 22 5 22 19"
-        );
-      });
-
-      if (hasDesiredPolygons) {
-        button.click();
-        break;
-      }
-
-      // Condition to find SVG with specific class
-      const svgElement = button.querySelector("svg.-rotate-180");
-      if (svgElement) {
-        button.click();
-        break;
-      }
-
-      if (
-        button.innerText.includes("Continue generating") ||
-        button.innerText.includes("Continue") ||
-        button.innerText.includes(">>")
-      ) {
-        button.click();
-        break;
-      }
-    }
-  }
-
-  // Function to create a download of the text
-  function download(filename, text) {
-    // Split the text by new line character
-    var lines = text.replace("javascriptCopy code", "").split("\n");
-
-    // Join the remaining lines back together
-    var filteredText = lines.join("\n");
-
-    var element = document.createElement("a");
-    element.setAttribute(
-      "href",
-      "data:text/plain;charset=utf-8," + encodeURIComponent(filteredText)
-    );
-    element.setAttribute("download", filename);
-    element.style.display = "none";
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  }
-
-  // Initialize a Set to keep track of processed code blocks
-  const processedCodeBlocks = new Set();
-
-  // Function to add a "Save to File" button
-  function addSaveToFileButton() {
-    // Query for the code blocks
-    const codeBlocks = document.querySelectorAll("pre");
-
-    // Iterate over the code blocks
-    for (let i = 0; i < codeBlocks.length; i++) {
-      if (processedCodeBlocks.has(codeBlocks[i])) {
-        // If this code block has already been processed, skip it
-        continue;
-      }
-
-      try {
-        const firstSpan = codeBlocks[i].querySelector("span");
-
-        // Get the programming language of the code block
-        const language = firstSpan.textContent;
-
-        // Create the "Save to File" button
-        const button = document.createElement("button");
-        button.className =
-          "btn relative btn-neutral whitespace-nowrap -z-0 border-0 md:border save-to-file-button";
-
-        button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5 flex-shrink-0">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-    </svg>`;
-
-        button.style.display = "block"; // Display the button as a block element (takes full width)
-
-        // Use flexbox to center the button horizontally
-        button.style.marginLeft = "auto";
-        button.style.marginRight = "auto";
-
-        button.style.marginBottom = "3px";
-
-        // When the button is clicked
-        button.addEventListener("click", function () {
-          // Ask the user for the filename
-          let filename = prompt("Enter the name for the " + language + " file");
-
-          // If the user didn't press Cancel
-          if (filename !== null) {
-            // Clone the pre element
-            const clonedPre = codeBlocks[i].cloneNode(true);
-
-            // Get all button elements from the clone and remove them
-            const buttons = clonedPre.querySelectorAll("button");
-            buttons.forEach((button) => button.parentNode.removeChild(button));
-            // Get the first span element from the clone and remove it
-            const firstSpan = clonedPre.querySelector("span");
-
-            // Get the programming language of the code block
-            const language = firstSpan.textContent;
-
-            let extension = "";
-
-            if (filename.includes(".")) {
-              filename = filename.split(".");
-              extension = "." + filename[1];
-              filename = filename[0];
-            }
-
-            // Remove the span
-            if (firstSpan) firstSpan.parentNode.removeChild(firstSpan);
-
-            extension = languageExtensions[language] || extension;
-
-            const final_name = filename + extension;
-
-            // Now the text content should not include the text of any button or the first span
-            const code = clonedPre.textContent;
-            // Download the code as a text file
-            download(final_name, code);
-          }
-        });
-
-        // Add the button right below the pre element
-        codeBlocks[i].parentElement.insertBefore(
-          button,
-          codeBlocks[i].nextElementSibling
-        );
-
-        // Mark this code block as processed
-        processedCodeBlocks.add(codeBlocks[i]);
-      } catch (error) {
-        continue;
-      }
-    }
-  }
-
-  const targetNode = document.body; // You can change the target element
-
-  // Configure the mutation observer
-  const observer = new MutationObserver(addProgressBarToUI);
-
-  const observerConfig = {
-    childList: true, // Watch for changes in child elements
-    subtree: true, // Watch for changes in all descendants
-  };
-
-  // Start observing changes
-  observer.observe(targetNode, observerConfig);
-
-  chrome.runtime.onMessage.addListener(function (
-    message,
-    sender,
-    sendResponse
-  ) {
-    if (message.type === "showUpdateNotification") {
-      // Function to display an update notification with the description
-      function showUpdateNotification(description) {
-        const notification = document.createElement("div");
-        notification.textContent = `Your extension has been updated to version ${currentVersion}. ${description} Click here to learn more.`;
-        notification.style.position = "fixed";
-        notification.style.top = "10px";
-        notification.style.right = "10px";
-        notification.style.padding = "10px";
-        notification.style.backgroundColor = "lightblue";
-        notification.style.border = "1px solid #333";
-        notification.style.borderRadius = "5px";
-        notification.style.cursor = "pointer";
-        notification.style.zIndex = "9999";
-
-        // Add an event listener to the notification
-        notification.addEventListener("click", function () {
-          // You can display a more detailed update message or guide the user on what's new
-          alert("Update Details:\n\n" + description);
-          notification.style.display = "none"; // Hide the notification
-        });
-
-        document.body.appendChild(notification);
-      }
-
-      // Show the update notification with the provided description
-      showUpdateNotification(message.description);
-    }
+// Function to add event listeners for progress bar and tooltip
+function addEventListeners() {
+  state.progressBar.addEventListener("mouseover", () => {
+    state.tooltip.style.display = "block";
+    state.tooltip.style.opacity = 1;
+    document.addEventListener("mousemove", updateTooltipPosition);
   });
-})();
+
+  state.progressBar.addEventListener("mouseout", () => {
+    state.tooltip.style.opacity = 0;
+    document.removeEventListener("mousemove", updateTooltipPosition);
+  });
+
+  state.indicatorLineAbove.addEventListener("mouseover", () => {
+    state.tooltip.style.display = "block";
+    state.tooltip.style.opacity = 1;
+    document.addEventListener("mousemove", updateTooltipPosition);
+  });
+
+  state.indicatorLineAbove.addEventListener("mouseout", () => {
+    state.tooltip.style.opacity = 0;
+    document.removeEventListener("mousemove", updateTooltipPosition);
+  });
+}
+
+// Function to update the progress bar
+function updateProgressBar() {
+  clickContinueButton();
+  updateTheme();
+}
+
+// Function to update the tokens amount and progress bar width
+function updateTokensAmount() {
+  if (!state.textArea) return;
+  getChatMessagesText().then((chatMessages) => {
+    if (areChatMessagesIdentical(chatMessages)) return;
+    const cumulativeTokens = calculateCumulativeTokens(chatMessages);
+    updateProgressBarWidth(cumulativeTokens);
+    updateLastKnownMessages(chatMessages);
+  });
+}
+
+// Function to check if chat messages are identical
+function areChatMessagesIdentical(chatMessages) {
+  const chatMessagesSet = new Set(chatMessages);
+  const lastKnownMessagesSet = new Set(state.lastKnownMessages);
+  return (
+    chatMessagesSet.size === lastKnownMessagesSet.size &&
+    [...chatMessagesSet].every((message) => lastKnownMessagesSet.has(message))
+  );
+}
+
+// Function to calculate the cumulative tokens in chat messages
+function calculateCumulativeTokens(chatMessages) {
+  return chatMessages.reduce(
+    (cumulativeTokens, message) => cumulativeTokens + countTokens(message),
+    0
+  );
+}
+
+// Function to count tokens in a text
+function countTokens(text) {
+  if (text === "") return 0;
+  const tokens = llamaTokenizer.encode(text);
+  let numTokens =
+    tokens.length < MAX_TOKENS
+      ? Math.round(tokens.length * 0.85)
+      : tokens.length; // In my tests, reducing by 15% makes the llama tokens similar to the GPT tokens. Also, beyond 5000 tokens, it doesn't work. Then we fallback to the real llama number that is similar to the GPT in a big text
+  return numTokens;
+}
+
+// Function to get text from chat message elements
+async function getChatMessagesText() {
+  const messages = [];
+  const chatMessageElements = document.querySelectorAll(".group.w-full.text-token-text-primary");
+
+  chatMessageElements.forEach((element) => {
+    const clonedElement = cloneAndCleanMessage(element);
+    let message = clonedElement.innerText.trim();
+    if (message.startsWith("ChatGPT")) {
+      message = message.substring(7);
+    }
+    messages.push(message);
+  });
+
+  return messages;
+}
+
+// Function to clone and clean a message element
+function cloneAndCleanMessage(element) {
+  const clonedElement = element.cloneNode(true);
+  const codeBlocks = clonedElement.querySelectorAll("pre");
+  codeBlocks.forEach((codeBlock) => {
+    const buttons = codeBlock.querySelectorAll("button");
+    buttons.forEach((button) => button.remove());
+    const firstSpan = codeBlock.querySelector("span");
+    firstSpan.innerHTML = "\n\n";
+  });
+  return clonedElement;
+}
+
+// Function to update the width of the progress bar and tooltip message
+function updateProgressBarWidth(cumulativeTokens) {
+  let message = "";
+  if (cumulativeTokens >= MAX_TOKENS) {
+    state.progressBar.style.width = "100%";
+    state.progressBar.style.backgroundColor = "red";
+    message =
+      cumulativeTokens >= 8168
+        ? `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>You have exceeded the hard context window (8168 tokens).<br>I recommend opening a new chat. It won't remember the first messages.`
+        : `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>You have exceeded the context window. GPT may not be able to complete the task.<br>You can open a new chat to use the full context again`;
+  } else {
+    const width = (cumulativeTokens / MAX_TOKENS) * 100;
+    state.progressBar.style.width = width + "%";
+    state.progressBar.style.backgroundColor = `hsl(${
+      120 * (1 - width / 100)
+    }, 100%, 50%)`;
+
+    message = `Tokens: <span style="color: hsl(${
+      120 * (1 - width / 100)
+    }, 100%, 30%);">${cumulativeTokens}</span>/4096`;
+  }
+
+  updateTooltip(message);
+}
+
+// Function to calculate token color
+function calculateTokenColor(cumulativeTokens) {
+  return `hsl(${120 * (1 - cumulativeTokens / MAX_TOKENS)}, 100%, 30%)`;
+}
+
+// Function to update the tooltip message
+function updateTooltip(message) {
+  state.tooltip.innerHTML = message;
+}
+
+// Function to update the last known chat messages
+function updateLastKnownMessages(chatMessages) {
+  state.lastKnownMessages = chatMessages;
+}
+
+// Function to simulate clicking the "Continue" button
+function clickContinueButton() {
+  const buttons = document.querySelectorAll(".btn");
+  for (const button of buttons) {
+    const polygons = button.querySelectorAll("polygon");
+    const hasDesiredPolygons = Array.from(polygons).some((polygon) => {
+      const points = polygon.getAttribute("points");
+      return (
+        points === "11 19 2 12 11 5 11 19" ||
+        points === "22 19 13 12 22 5 22 19"
+      );
+    });
+    if (hasDesiredPolygons) {
+      button.click();
+      break;
+    }
+    const svgElement = button.querySelector("svg.-rotate-180");
+    if (svgElement) {
+      button.click();
+      break;
+    }
+    if (
+      button.innerText.includes("Continue generating") ||
+      button.innerText.includes("Continue") ||
+      button.innerText.includes(">>")
+    ) {
+      button.click();
+      break;
+    }
+  }
+}
+
+// Function to download text as a file
+function download(filename, text) {
+  const lines = text.replace("javascriptCopy code", "").split("\n");
+  const filteredText = lines.join("\n");
+  const element = document.createElement("a");
+  element.setAttribute(
+    "href",
+    "data:text/plain;charset=utf-8," + encodeURIComponent(filteredText)
+  );
+  element.setAttribute("download", filename);
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
+
+// Function to add a "Save to File" button to code blocks
+function addSaveToFileButton() {
+  const codeBlocks = document.querySelectorAll("pre");
+  for (const codeBlock of codeBlocks) {
+    if (state.processedCodeBlocks.has(codeBlock)) continue;
+    try {
+      const button = createSaveToFileButton(codeBlock);
+      codeBlock.parentElement.insertBefore(
+        button,
+        codeBlock.nextElementSibling
+      );
+      state.processedCodeBlocks.add(codeBlock);
+    } catch (error) {
+      continue;
+    }
+  }
+}
+
+// Function to create a "Save to File" button for a code block
+function createSaveToFileButton(codeBlock) {
+  const button = document.createElement("button");
+  button.className =
+    "btn relative btn-neutral whitespace-nowrap -z-0 border-0 md:border save-to-file-button";
+  button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5 flex-shrink-0">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+  </svg>`;
+  button.style.display = "block";
+  button.style.marginLeft = "auto";
+  button.style.marginRight = "auto";
+  button.style.marginBottom = "3px";
+  button.addEventListener("click", () =>
+    handleSaveToFileButtonClick(codeBlock)
+  );
+  return button;
+}
+
+// Function to handle the "Save to File" button click
+function handleSaveToFileButtonClick(codeBlock) {
+  let filename = prompt(
+    `Enter the name for the ${getLanguageFromCodeBlock(codeBlock)} file`
+  );
+  if (filename !== null) {
+    const extension = languageExtensions[getLanguageFromCodeBlock(codeBlock)];
+    const finalName = (
+      filename.includes(".") ? filename : filename + extension
+    ).trim();
+    const code = codeBlock.textContent;
+    download(finalName, code);
+  }
+}
+
+// Function to get the language from a code block
+function getLanguageFromCodeBlock(codeBlock) {
+  const firstSpan = codeBlock.querySelector("span");
+  if (firstSpan) {
+    return firstSpan.textContent;
+  }
+  return "text"; // Default to "text" if language is not recognized
+}
+
+// Initialize a Set to keep track of processed code blocks
+state.processedCodeBlocks = new Set();
+
+// Start observing changes in the document
+const targetNode = document.body;
+const observer = new MutationObserver(addProgressBarToUI);
+const observerConfig = {
+  childList: true,
+  subtree: true,
+};
+observer.observe(targetNode, observerConfig);
