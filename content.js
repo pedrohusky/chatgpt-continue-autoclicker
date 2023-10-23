@@ -542,6 +542,8 @@ function addProgressBarToUI() {
   state.indicatorLineAbove = document.createElement("div");
   state.indicatorLineAbove.classList.add("progress-indicator");
   state.indicatorLineAbove.style.position = "inital";
+  state.indicatorLineAbove.style.display = "flex";
+  state.indicatorLineAbove.style.alignItems = "center";
 
   // Set indicator line styles
   state.indicatorLineAbove.style.boxShadow = "0px 1px 2px rgba(0, 0, 0, 0.3)";
@@ -556,8 +558,9 @@ function addProgressBarToUI() {
   state.progressBar = document.createElement("div");
   state.progressBar.classList.add("progress-bar");
   state.progressBar.style.width = "0%";
-  state.progressBar.style.maxWidth = "99.9%"; // Slight adjustment
+  state.progressBar.style.maxWidth = "99.75%"; // Slight adjustment
   state.progressBar.style.margin = "0.1%";
+  state.progressBar.style.marginTop = "0.12%";
   state.progressBar.style.height = "80%";
   state.progressBar.style.backgroundColor = "red";
   state.progressBar.style.transition = "width 0.3s ease-in-out";
@@ -572,8 +575,10 @@ function addProgressBarToUI() {
   // Set intervals for updating progress bar and tokens amount
   setInterval(updateProgressBar, state.interval);
   setInterval(updateTokensAmount, 2000);
+  const darkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const color = darkTheme ? "50%" : "40%";
   updateTooltip(
-    "Tokens: <span style='color: hsl(120, 100%, 30%);'>0</span>/4096"
+    `Tokens: <span style='color: hsl(120, 100%, ${color});'>0</span>/4096`
   );
 }
 
@@ -708,6 +713,9 @@ function cloneAndCleanMessage(element) {
 // Function to update the width of the progress bar and tooltip message
 function updateProgressBarWidth(cumulativeTokens) {
   let message = "";
+  
+  const darkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const color = darkTheme ? "50%" : "40%";
   if (cumulativeTokens >= MAX_TOKENS) {
     state.progressBar.style.width = "100%";
     state.progressBar.style.backgroundColor = "red";
@@ -720,11 +728,11 @@ function updateProgressBarWidth(cumulativeTokens) {
     state.progressBar.style.width = width + "%";
     state.progressBar.style.backgroundColor = `hsl(${
       120 * (1 - width / 100)
-    }, 100%, 50%)`;
+    }, 100%, ${color})`;
 
     message = `Tokens: <span style="color: hsl(${
       120 * (1 - width / 100)
-    }, 100%, 30%);">${cumulativeTokens}</span>/4096`;
+    }, 100%, ${color});">${cumulativeTokens}</span>/4096`;
   }
 
   updateTooltip(message);
