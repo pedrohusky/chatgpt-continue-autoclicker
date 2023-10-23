@@ -670,9 +670,9 @@ let last_language = "";
     const viewportWidth = window.innerWidth;
 
     // Determine the appropriate top value based on the viewport width
-    let topValue = 25; // Default value for desktop
+    let topValue = 26; // Default value for desktop
     if (viewportWidth <= 767) {
-      topValue = 22; // Mobile value
+      topValue = 20; // Mobile value
     }
 
     // Set the top property of the parent element
