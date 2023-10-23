@@ -481,7 +481,7 @@ let last_language = "";
 
   let showTokens = null;
   chrome.storage.sync.get(["showTokens"], function (result) {
-    showTokens = result.showTokens || false;
+    showTokens = result.showTokens || true;
   });
 
   function createTooltip() {
