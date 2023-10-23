@@ -469,19 +469,16 @@ let last_language = "";
   document.body.appendChild(tooltip);
 
   let interval = null;
-  chrome.storage.sync.get(["interval"], function (result) {
-    interval = result.interval || 1000;
-  });
-
-  let showSaveButton = null;
-  chrome.storage.sync.get(["showSaveButton"], function (result) {
-    addSaveToFileButton();
-    showSaveButton = result.showSaveButton || false;
-  });
-
   let showTokens = null;
-  chrome.storage.sync.get(["showTokens"], function (result) {
-    showTokens = result.showTokens || true;
+  let showSaveButton = null;
+
+  chrome.storage.sync.get(["interval", "showSaveButton", "showTokens"], function (result) {
+    interval = result.interval || 1000;
+    showSaveButton = result.showSaveButton || false;
+    if (showSaveButton) {
+    addSaveToFileButton();
+    }
+    showTokens = result.showTokens !== false;
   });
 
   function createTooltip() {

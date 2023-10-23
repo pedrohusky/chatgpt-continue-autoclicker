@@ -26,9 +26,8 @@ chrome.storage.sync.get(
   ["interval", "showSaveButton", "showTokens"],
   function (result) {
     document.getElementById("interval-input").value = result.interval || 1000;
-    document.getElementById("show-save-button").checked =
-      result.showSaveButton === true; // Defaults to true if not yet set
-    document.getElementById("show-tokens").checked = result.showTokens === true; // Defaults to true if not yet set
+    document.getElementById("show-save-button").checked = result.showSaveButton === true; // Defaults to true if not yet set
+    document.getElementById("show-tokens").checked = result.showTokens !== false; // Defaults to true if not yet set
     
   }
 );
