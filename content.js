@@ -478,9 +478,6 @@ chrome.storage.sync.get(
   function (result) {
     state.interval = result.interval || 1000;
     state.showSaveButton = result.showSaveButton || false;
-    if (state.showSaveButton) {
-      addSaveToFileButton();
-    }
     state.showTokens = result.showTokens !== false;
   }
 );
@@ -620,6 +617,9 @@ function addEventListeners() {
 function updateProgressBar() {
   clickContinueButton();
   updateTheme();
+  if (state.showSaveButton) {
+    addSaveToFileButton()
+  }
 }
 
 // Function to update the tokens amount and progress bar width
