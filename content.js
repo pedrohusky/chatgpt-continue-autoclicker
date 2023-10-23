@@ -570,7 +570,9 @@ function addProgressBarToUI() {
   // Set intervals for updating progress bar and tokens amount
   setInterval(updateProgressBar, state.interval);
   setInterval(updateTokensAmount, 2000);
-  updateTooltip("Tokens: <span style='color: hsl(120, 100%, 30%);'>0</span>/4096");
+  updateTooltip(
+    "Tokens: <span style='color: hsl(120, 100%, 30%);'>0</span>/4096"
+  );
 }
 
 // Function to set the 'top' property for a UI element
@@ -618,7 +620,7 @@ function updateProgressBar() {
   clickContinueButton();
   updateTheme();
   if (state.showSaveButton) {
-    addSaveToFileButton()
+    addSaveToFileButton();
   }
 }
 
@@ -655,6 +657,8 @@ function calculateCumulativeTokens(chatMessages) {
 function countTokens(text) {
   if (text === "") return 0;
   const tokens = llamaTokenizer.encode(text);
+  console.log(text);
+  console.log(tokens.length);
   let numTokens =
     tokens.length < MAX_TOKENS
       ? Math.round(tokens.length * 0.85)
@@ -665,16 +669,23 @@ function countTokens(text) {
 // Function to get text from chat message elements
 async function getChatMessagesText() {
   const messages = [];
-  const chatMessageElements = document.querySelectorAll(".group.w-full.text-token-text-primary");
+  const chatMessageElements = document.querySelectorAll(
+    ".group.w-full.text-token-text-primary"
+  );
 
   chatMessageElements.forEach((element) => {
     const clonedElement = cloneAndCleanMessage(element);
     let message = clonedElement.innerText.trim();
+    
     if (message.startsWith("ChatGPT")) {
       message = message.substring(7);
     }
+    if (message.startsWith("1 / 1")) {
+      message = message.substring(5);
+    }
     messages.push(message);
   });
+
 
   return messages;
 }
@@ -685,7 +696,7 @@ function cloneAndCleanMessage(element) {
   const codeBlocks = clonedElement.querySelectorAll("pre");
   codeBlocks.forEach((codeBlock) => {
     const buttons = codeBlock.querySelectorAll("button");
-    buttons.forEach((button) => button.remove());
+    buttons.forEach((button) => (button.innerHTML = ""));
     const firstSpan = codeBlock.querySelector("span");
     firstSpan.innerHTML = "\n\n";
   });
@@ -715,11 +726,6 @@ function updateProgressBarWidth(cumulativeTokens) {
   }
 
   updateTooltip(message);
-}
-
-// Function to calculate token color
-function calculateTokenColor(cumulativeTokens) {
-  return `hsl(${120 * (1 - cumulativeTokens / MAX_TOKENS)}, 100%, 30%)`;
 }
 
 // Function to update the tooltip message
