@@ -1,4 +1,3 @@
-"use strict";
 /**
  * MIT LICENSE
  *
@@ -472,14 +471,17 @@ let last_language = "";
   let showTokens = null;
   let showSaveButton = null;
 
-  chrome.storage.sync.get(["interval", "showSaveButton", "showTokens"], function (result) {
-    interval = result.interval || 1000;
-    showSaveButton = result.showSaveButton || false;
-    if (showSaveButton) {
-    addSaveToFileButton();
+  chrome.storage.sync.get(
+    ["interval", "showSaveButton", "showTokens"],
+    function (result) {
+      interval = result.interval || 1000;
+      showSaveButton = result.showSaveButton || false;
+      if (showSaveButton) {
+        addSaveToFileButton();
+      }
+      showTokens = result.showTokens !== false;
     }
-    showTokens = result.showTokens !== false;
-  });
+  );
 
   function createTooltip() {
     // Create a tooltip container
