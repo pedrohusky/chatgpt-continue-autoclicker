@@ -1,89 +1,98 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <style>
-        body {
-            width: 300px;
-            height: 200px;
-            margin: 0;
-            padding: 0;
-            background-color: #f6f8fa;
-            font-family: Arial, sans-serif;
-        }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+      }
 
-        h1 {
-            color: #2c3e50;
-            font-size: 1.5em;
-            text-align: center;
-        }
+      body {
+        width: 300px;
+        height: 200px;
+        background-color: transparent;
+        font-family: Arial, sans-serif;
+      }
 
-        div {
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-        }
+      h1 {
+        color: #ffffff;
+        font-size: 1.5em;
+        text-align: center;
+      }
 
-        label {
-            margin-bottom: 10px;
-            align-items: center;
-            justify-content: center;
-            color: #2c3e50;
-        }
+      div {
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        background-color: rgb(52, 53, 65);
+        box-shadow: 0px 5px 25px rgba(0, 0, 0, 0.3);
+      }
 
-        input {
-            margin: auto;
-            margin-top: 15px;
-            border: 1px solid #bdc3c7;
-            border-radius: 10px;
-            padding: 5px;
-            width: 95%;
-            /* Add this line */
-        }
+      label {
+        margin-bottom: 10px;
+        color: #fff;
+      }
 
-        button {
-            color: white;
-            background-color: #2980b9;
-            border: none;
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 10px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+      input {
+        margin: auto;
+        margin-top: 15px;
+        border: 1px solid #bdc3c7;
+        border-radius: 10px;
+        padding: 5px;
+        width: 95%;
+      }
 
-        button:hover {
-            background-color: #3498db;
-        }
+      button {
+        color: white;
+        background-color: #2980b9;
+        border: none;
+        border-radius: 4px; /* Set the border radius to match the tooltip */
+        padding: 4px 8px; /* Set the padding to match the tooltip */
+        margin-top: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        display: inline-block; /* Display the button inline */
+        box-shadow: 0px 5px 25px rgba(0, 0, 0, 0.3); /* Add shadow to the button */
+      }
 
-        #reload-btn {
-            margin-top: 20px;
-            background-color: #27ae60;
-        }
+      button:hover {
+        background-color: #3498db;
+      }
 
-        #reload-btn:hover {
-            background-color: #2ecc71;
-        }
+      #reload-btn {
+        margin-top: 20px;
+        background-color: #27ae60;
+      }
+
+      #reload-btn:hover {
+        background-color: #2ecc71;
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <h1>ChatGPT Continue Auto-Clicker Settings</h1>
+  <body>
     <div>
-        <label>
-            Auto Click Interval <b>(ms)</b>:
-            <input id="interval-input" type="number" min="500">
-        </label>
+      <h1>ChatGPT Continue Auto-Clicker Settings</h1>
+      <label>
+        Auto Click Interval <b>(ms)</b>:
+        <input id="interval-input" type="number" min="500" />
+      </label>
 
-        <label>
-            Show <b>Save Button</b> below code blocks:
-            <input id="show-save-button" type="checkbox">
-        </label>
+      <label>
+        Show <b>Save Button</b> below code blocks:
+        <input id="show-save-button" type="checkbox" />
+      </label>
 
-        <button id="save-btn">Save</button>
-        <button id="reload-btn">Reload OpenAI Tabs</button>
+      <label>
+        Show <b>Token Count</b> below prompt area:
+        <input id="show-tokens" type="checkbox" />
+      </label>
+
+      <button id="save-btn">Save</button>
+      <button id="reload-btn">Reload OpenAI Tabs</button>
     </div>
-    <script src="popup.js"></script>
-</body>
 
+    <script src="popup.js"></script>
+  </body>
 </html>

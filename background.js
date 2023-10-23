@@ -1,16 +1,42 @@
-self.addEventListener("install", async function (event) {
-  const tabs = await chrome.tabs.query({ url: "https://chat.openai.com/*" });
+// Define the extension version and update description
+const currentVersion = "1.4.4"; // Replace with your current extension version
+const updateDescription = `Now it count the token usage and show it with a cool progress bar that changes color based on the token usage!`;
 
-  if (tabs.length > 0) {
-    await chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: "Reload OpenAI Tabs?",
-      message:
-        "Would you like to reload your OpenAI tabs to activate the extension?",
-      buttons: [{ title: "Reload" }],
-      priority: 2,
-    });
+// Check if the extension has been updated
+chrome.runtime.onInstalled.addListener(async function (details) {
+  if (details.reason === "install") {
+    // This block will be executed only when the extension is installed
+    const tabs = await chrome.tabs.query({ url: "https://chat.openai.com/*" });
+
+    if (tabs.length > 0) {
+      await chrome.notifications.create({
+        type: "basic",
+        iconUrl: "./images/icon128.png",
+        title: "Reload OpenAI Tabs?",
+        message:
+          "Would you like to reload your OpenAI tabs to activate the extension?",
+        buttons: [{ title: "Reload" }],
+        priority: 2,
+      });
+    }
+  } else if (details.reason === "update") {
+    // This block will be executed only when the extension is updated
+    const tabs = await chrome.tabs.query({ url: "https://chat.openai.com/*" });
+
+    if (tabs.length > 0) {
+      await chrome.notifications.create({
+        type: "basic",
+        iconUrl: "./images/icon128.png",
+        title: "Continue Generating was updated!",
+        message:
+          "Your extension has been updated to version " +
+          currentVersion +
+          ". \n" +
+          updateDescription,
+        buttons: [{ title: "Great! Reload OpenAI Tabs!" }],
+        priority: 2,
+      });
+    }
   }
 });
 
