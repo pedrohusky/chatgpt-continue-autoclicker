@@ -452,24 +452,21 @@ const languageExtensions = {
   assembly: ".asm",
 };
 
-let lastKnownMessages = [];
-
 // Maximum token limit
 const maxTokens = 4096;
-
-let last_language = "";
 
 (function () {
   let progressBar = null;
   let indicatorLineAbove = null;
   let lastColor = null;
   let textArea = null;
-  const tooltip = createTooltip();
-  document.body.appendChild(tooltip);
-
   let interval = null;
   let showTokens = null;
   let showSaveButton = null;
+  let lastKnownMessages = [];
+
+  const tooltip = createTooltip();
+  document.body.appendChild(tooltip);
 
   chrome.storage.sync.get(
     ["interval", "showSaveButton", "showTokens"],
@@ -697,7 +694,6 @@ let last_language = "";
       chatMessagesSet.size === lastKnownMessagesSet.size &&
       [...chatMessagesSet].every((message) => lastKnownMessagesSet.has(message))
     ) {
-      console.log("Arrays are equal");
       return;
     } else {
       // Calculate the differences between chatMessagesSet and lastKnownMessagesSet
@@ -708,11 +704,8 @@ let last_language = "";
         (message) => !chatMessagesSet.has(message)
       );
 
-      console.log("Added Messages:", addedMessages);
-      console.log("Removed Messages:", removedMessages);
     }
     let cumulativeTokens = 0;
-    console.log("Updating tokens");
 
     // Calculate the cumulative token count
     chatMessages.forEach((message) => {
@@ -778,18 +771,23 @@ let last_language = "";
 
     chatMessageElements.forEach((element) => {
       const clonedElement = element.cloneNode(true);
+      const codeBlocks = clonedElement.querySelectorAll("pre");
+      codeBlocks.forEach((codeBlock) => {
       // Remove all button elements from the message
-      const buttons = clonedElement.querySelectorAll("button");
-      buttons.forEach((button) => button.remove());
+      const buttons = codeBlock.querySelectorAll("button");
+      const lastButton = buttons[buttons.length - 1].cloneNode(true);
+      buttons.forEach((button) => {
+        button.remove();
+      });
 
       // Remove the first span element from the message
-      const firstSpan = clonedElement.querySelector("span");
-      if (firstSpan) {
-        firstSpan.remove();
-      }
-
+      const firstSpan = codeBlock.querySelector("span");
+      firstSpan.innerHTML = "\n\n";
+      lastButton.innerHTML = "\n\n";
+      })
+      
       // Extract and clean the text content of the element
-      let message = clonedElement.textContent.trim();
+      let message = clonedElement.innerText.trim();
 
       if (message.startsWith("ChatGPT")) {
         // Replace the first occurrence of "ChatGPT" with ""
