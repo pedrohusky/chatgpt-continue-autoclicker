@@ -514,7 +514,9 @@ function updateTheme() {
   if (themeColor === state.lastColor) return;
 
   state.indicatorLineAbove.style.backgroundColor = themeColor;
-  state.tooltip.style.backgroundColor = themeColor;
+  state.tooltip.style.backgroundColor = darkTheme
+    ? "rgb(52, 53, 65)"
+    : "rgb(255, 255, 255)";
   state.tooltip.style.border =
     "0.01px solid " + (darkTheme ? "rgb(86, 88, 105)" : "rgb(217, 217, 227)");
   state.lastColor = state.indicatorLineAbove.style.backgroundColor;
