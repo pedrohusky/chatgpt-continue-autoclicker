@@ -828,6 +828,7 @@ function createSaveToFileButton(codeBlock) {
   button.style.marginLeft = "auto";
   button.style.marginRight = "auto";
   button.style.marginBottom = "3px";
+  button.style.marginTop = "10px";
   button.addEventListener("click", () =>
     handleSaveToFileButtonClick(codeBlock)
   );
@@ -876,9 +877,7 @@ let button = null;
 let parent = null;
 let sidebarOpen = false; // Initialize the sidebar state as closed
 
-let edgeThreshold = null;
-      // Threshold to determine how close to the left edge triggers the event
-edgeThreshold = updateThreshold(); // Adjust this value as needed
+let edgeThreshold = null; // Threshold to determine how close to the left edge triggers the event
 
 function findButtons(isMobile) {
   // Retrieve the button element by its class or attributes
@@ -896,16 +895,20 @@ function findButtons(isMobile) {
   }
 }
 
-function updateThreshold() {
+function updateThreshold(isMobile) {
   // Calculate the threshold as 25% of the current visible screen width
-  edgeThreshold = 0.15 * window.innerWidth;
-  return edgeThreshold;
+  if (isMobile) {
+    edgeThreshold = 0.05 * window.innerWidth;
+  } else {
+    edgeThreshold = 0.18 * window.innerWidth;
+  }
 }
 
 function handleResize(isMobile) {
-  updateThreshold();
+  updateThreshold(isMobile);
   findButtons(isMobile);
   // Add an event listener to the document to track mouse movements
+  document.removeEventListener("mousemove", handleMouseMovement);
   document.addEventListener("mousemove", handleMouseMovement);
 }
 
