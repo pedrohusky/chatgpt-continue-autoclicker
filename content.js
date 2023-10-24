@@ -559,7 +559,7 @@ function addProgressBarToUI() {
   state.progressBar = document.createElement("div");
   state.progressBar.classList.add("progress-bar");
   state.progressBar.style.width = "0%";
-  state.progressBar.style.maxWidth = "99.75%"; // Slight adjustment
+  state.progressBar.style.maxWidth = "99.85%"; // Slight adjustment
   state.progressBar.style.margin = "0.1%";
   state.progressBar.style.marginTop = "0.12%";
   state.progressBar.style.height = "80%";
@@ -845,8 +845,15 @@ function handleSaveToFileButtonClick(codeBlock) {
     const finalName = (
       filename.includes(".") ? filename : filename + extension
     ).trim();
-    const code = codeBlock.textContent;
-    download(finalName, code);
+
+    // Clone the code block and clean it
+    const clonedBlock = codeBlock.cloneNode(true);
+    const buttons = clonedBlock.querySelectorAll("button");
+    buttons.forEach((button) => (button.remove()));
+    const firstSpan = clonedBlock.querySelector("span");
+    firstSpan.remove();
+
+    download(finalName, clonedBlock.innerText);
   }
 }
 
