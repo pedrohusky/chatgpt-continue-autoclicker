@@ -849,7 +849,7 @@ function handleSaveToFileButtonClick(codeBlock) {
     // Clone the code block and clean it
     const clonedBlock = codeBlock.cloneNode(true);
     const buttons = clonedBlock.querySelectorAll("button");
-    buttons.forEach((button) => (button.remove()));
+    buttons.forEach((button) => button.remove());
     const firstSpan = clonedBlock.querySelector("span");
     firstSpan.remove();
 
@@ -878,8 +878,6 @@ const observerConfig = {
 };
 observer.observe(targetNode, observerConfig);
 
-
-
 let button = null;
 let parent = null;
 let sidebarOpen = false; // Initialize the sidebar state as closed
@@ -893,7 +891,6 @@ function findButtons(isMobile) {
     button = document.querySelector(
       'svg[stroke="currentColor"][fill="none"][stroke-width="2"][viewBox="0 0 24 24"][stroke-linecap="round"][stroke-linejoin="round"][class="icon-lg"][height="1em"][width="1em"][xmlns="http://www.w3.org/2000/svg"]'
     ).parentElement;
-    
   } else {
     parent = parentDiv.parentElement;
     if (parent.children[1]) {
@@ -977,20 +974,16 @@ function updateSideBarStatus() {
 }
 
 // Load settings from Chrome storage and set state properties
-chrome.storage.sync.get(
-  ["autoFullMode"],
-  function (result) {
-    state.autoFullMode = result.autoFullMode !== false;
+chrome.storage.sync.get(["autoFullMode"], function (result) {
+  state.autoFullMode = result.autoFullMode !== false;
 
-    if (state.autoFullMode) {
+  if (state.autoFullMode) {
+    updateSideBarStatus();
 
-      updateSideBarStatus();
+    const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
 
-      const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
+    handleViewportChange(mediaQuery); // Call it initially
 
-      handleViewportChange(mediaQuery); // Call it initially
-
-      mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
-    }
+    mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
   }
-);
+});

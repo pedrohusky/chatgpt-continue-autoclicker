@@ -1,62 +1,44 @@
-# Continue Auto Clicker for Chromium-based and Firefox Browsers
+# ChatGPT Continue Generating Auto-Clicker
 
-The "ChatGPT Continue Generating Auto-Clicker" extension simplifies your experience with ChatGPT by automating the process of clicking the "Continue generating" button. With this extension, you can save time and effort, especially if you frequently switch tabs while waiting for your prompt to generate a response.
+The ⚙️ **ChatGPT Continue Generating Auto-Clicker** extension enhances your ChatGPT experience by automating the process of clicking the "Continue generating" button. This feature can be a real time-saver, especially when you often switch tabs while waiting for your prompt to generate a response.
 
-# Why this repo:
+## Recent Updates
 
-Because some people were telling false information about my extension, I will release the code here to be open-source and to be analyzed by anyone who wants to.
+- 🔄 **Update 1.1.0**: The extension now prompts users to reload their active OpenAI ChatGPT tabs, if any are open.
+- 📱 **Update 1.2.0**: Improved Mobile View - Optimized for a seamless experience on mobile devices.
+- 🔄 **Update 1.3.0**: Missing Clicks - Fixed issues where the button click would sometimes not register.
+- 🎨 **Update 1.4.0**: Customization - Now, you can adjust the auto-click interval to suit your preferences. Please note that intervals below 1000 ms may lead to issues with the "only one message at a time" constraint.
+- 📥 **Update 1.4.0**: Code Block Downloads - Added a convenient feature that allows you to download code blocks in your preferred language.
+- 🐞 **Update 1.4.1**: Bug Fixes - Includes several fixes to enhance stability.
+- 🌟 **Update 1.4.2**: Visual Enhancements - Introduces a stylish icon for the extension.
+- 🌍 **Update 1.4.3**: Universal Language Support - Expands language support to all languages, both in mobile and desktop views.
+- 🔒 **Update 1.4.4**: Token Tracking - Introduces a token usage counter with a dynamic progress bar that changes color based on token consumption. Note that we utilize the llama-tokenizer for superior accuracy.
+- 🪄 **Update 1.4.5**: Automagically flips the nav-bar when the mouse is near. Also includes fixes and stylings, with some functionalities enabled by default.
 
-# UPDATES:
+These exciting updates bring enhanced functionality, mobile optimization, customization, and a better understanding of your token usage, making your ChatGPT experience smoother and more efficient. Try it out now!
 
-• Now it will ask the user to reload the active OpenAI ChatGPT tabs, if any.
+## Key Features
 
-• 27/07/23 - Now, in Mobile View, the extension will work flawlessly. Thanks Rick for the heads up!
-• 27/07/23 - Now working with the new update of ChatGPT.
+- 🔄 **Auto Full Mode**: Automagically flips the history chat when the mouse is near.
+- 🌑🌕 **Dark and Light Theme**: Supports both themes, changing the colors accordingly.
+- 🔢 **Token Counter**: Keep an eye on your token usage with a visual bar below the prompt area to stay within the context window's limits.
+- 📥 **Download Button**: Easily download code blocks in your preferred language with the added button below code blocks.
+- 🖱️ **Automated Clicking**: The extension seamlessly automates the "Continue generating" button, freeing you to concentrate on other tasks without manual interruptions.
+- ⏱️ **Productivity Boost**: By eliminating the need for manual clicking, our extension optimizes your workflow and productivity.
+- ⏳ **Time-Saver**: Say goodbye to manual waiting – when you return to your ChatGPT tab, the extension ensures a continuous generation process.
 
-• 28/07/23 - UPTADE 1.4
+## Language Support
 
-- Now the extension has settings:
-- You can change the auto click interval now. _Note that setting lower than 1000 ms may cause issues with "only one message at a time"!_
+The extension currently supports all languages. Tooltip text is in English for now.
 
-  - ![image](https://github.com/pedrohusky/Continue-AutoClicker-for-Chromium-based-and-Firefox-browsers/assets/59580251/c9dfbd17-3b4c-425d-9915-60a995e90bd3)
-
-- You can enable or disable the display of a button below code blocks that downloads the code block as a file (and in the correct language too).
-  - ![image](https://github.com/pedrohusky/Continue-AutoClicker-for-Chromium-based-and-Firefox-browsers/assets/59580251/c1ae5dba-9615-4165-9bd8-7ae7d7baa9ed)
-
-• 20/10/23 - UPTADE 1.4.4
-
-- Now it count *(see note below)* the token usage and show it with a cool progress bar that changes color based on the token usage!*
- - Now you can track the context window way better with the bar below the chat!
-- **NOTE: It is using the llama-tokenizer. As it is for llama, it is a little different, but WAAAY(X100) better than most extensions out there that count tokens on GPT.**
-
-# Key Features:
-
-## Automated Clicking:
-
-The extension automatically clicks the "Continue generating" button whenever it becomes available, eliminating the need for manual intervention.
-
-## Enhanced Productivity:
-
-By eliminating the need to manually click the button, you can focus on other tasks or switch tabs without worrying about interrupting the generation process.
-
-## Time-Saver:
-
-No more waiting for the prompt to generate a response manually. When you return to the ChatGPT tab, the extension ensures that the generation continues seamlessly.
-
-## Language Support:
-
-The extension currently supports the English language (en-US). We are actively working to expand language support to include more languages in future updates, ensuring a wider user base can benefit from the auto-clicking functionality.
-
-# Privacy and Security:
+## Privacy and Security
 
 We prioritize your privacy and adhere to strict security standards. The extension does not collect or store any personal data or transmit any information outside of the ChatGPT environment. Rest assured that your interactions with ChatGPT remain confidential and secure.
 
-# Installation:
+## Installation
 
-- Install the extension from the store.
-
-  - Chrome Store: https://chrome.google.com/webstore/detail/chatgpt-continue-generati/ifckaoegkgefgnicdfmnkfafaeiingmp?hl=pt-BR&authuser=0
-  - Mozilla Store: https://addons.mozilla.org/en-US/firefox/addon/chatgpt-auto-clicker/
-
-- Open the ChatGPT chat in your browser.
-- Sit back and relax while the extension automatically clicks the "Continue generating" button for you.
+1. Install the extension from the store.
+   - Chrome Store: [ChatGPT Auto-Clicker](https://chrome.google.com/webstore/detail/chatgpt-continue-generati/ifckaoegkgefgnicdfmnkfafaeiingmp?hl=pt-BR&authuser=0)
+   - Mozilla Store: [ChatGPT Auto-Clicker](https://addons.mozilla.org/en-US/firefox/addon/chatgpt-auto-clicker/)
+2. Open the ChatGPT chat in your browser.
+3. Sit back and relax while the extension automatically clicks the "Continue generating" button for you.
