@@ -942,6 +942,9 @@ function handleMouseMovement(event) {
     if (sidebarOpen) {
       button.click();
       sidebarOpen = !sidebarOpen;
+      setTimeout(() => {
+        updateSideBarStatus();
+      }, 350);
     }
   }
 }
@@ -970,6 +973,7 @@ function updateSideBarStatus() {
       sidebarOpen = true;
     }
   }
+  updateThreshold();
 }
 
 // Load settings from Chrome storage and set state properties
