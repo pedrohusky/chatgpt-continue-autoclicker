@@ -941,7 +941,7 @@ function handleMouseMovement(event) {
       sidebarOpen = !sidebarOpen;
       setTimeout(() => {
         updateSideBarStatus();
-      }, 350);
+      }, 250);
     }
   }
 }
@@ -960,7 +960,6 @@ function updateSideBarStatus() {
   );
 
   if (divElement) {
-    console.log(divElement);
     const computedStyle = window.getComputedStyle(divElement);
     const displayProperty = computedStyle.getPropertyValue("width");
 
