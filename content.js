@@ -902,17 +902,16 @@ function findButtons(isMobile) {
   }
 }
 
-function updateThreshold(isMobile) {
+function updateThreshold() {
   // Calculate the threshold as 25% of the current visible screen width
-  if (isMobile) {
-    edgeThreshold = 0.05 * window.innerWidth;
-  } else {
-    edgeThreshold = 0.18 * window.innerWidth;
-  }
+  edgeThreshold = 0.18 * window.innerWidth;
 }
 
 function handleResize(isMobile) {
-  updateThreshold(isMobile);
+  if (isMobile) {
+    return;
+  }
+  updateThreshold();
   findButtons(isMobile);
   // Add an event listener to the document to track mouse movements
   document.removeEventListener("mousemove", handleMouseMovement);
@@ -955,6 +954,24 @@ function handleViewportChange(mediaQuery) {
   }
 }
 
+function updateSideBarStatus() {
+  const divElement = document.querySelector(
+    "div.flex-shrink-0.overflow-x-hidden.dark.bg-gray-900.gizmo\\:bg-black"
+  );
+
+  if (divElement) {
+    console.log(divElement);
+    const computedStyle = window.getComputedStyle(divElement);
+    const displayProperty = computedStyle.getPropertyValue("width");
+
+    if (displayProperty === "0px") {
+      sidebarOpen = false;
+    } else {
+      sidebarOpen = true;
+    }
+  }
+}
+
 // Load settings from Chrome storage and set state properties
 chrome.storage.sync.get(
   ["autoFullMode"],
@@ -962,24 +979,8 @@ chrome.storage.sync.get(
     state.autoFullMode = result.autoFullMode !== false;
 
     if (state.autoFullMode) {
-      // Add an event listener to the document to track mouse movements
-      document.addEventListener("mousemove", handleMouseMovement);
 
-      const divElement = document.querySelector(
-        "div.flex-shrink-0.overflow-x-hidden.dark.bg-gray-900.gizmo\\:bg-black"
-      );
-
-      if (divElement) {
-        console.log(divElement);
-        const computedStyle = window.getComputedStyle(divElement);
-        const displayProperty = computedStyle.getPropertyValue("width");
-
-        if (displayProperty === "0px") {
-          sidebarOpen = false;
-        } else {
-          sidebarOpen = true;
-        }
-      }
+      updateSideBarStatus();
 
       const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
 
