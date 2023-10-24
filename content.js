@@ -465,6 +465,7 @@ const state = {
   interval: DEFAULT_INTERVAL,
   showSaveButton: null,
   showTokens: null,
+  autoFullMode: null,
   lastKnownMessages: [],
   tooltip: createTooltip(),
 };
@@ -541,7 +542,7 @@ function addProgressBarToUI() {
   state.lastColor = null;
   state.indicatorLineAbove = document.createElement("div");
   state.indicatorLineAbove.classList.add("progress-indicator");
-  state.indicatorLineAbove.style.position = "inital";
+  state.indicatorLineAbove.style.position = "relative"; // or 'initial'
   state.indicatorLineAbove.style.display = "flex";
   state.indicatorLineAbove.style.alignItems = "center";
 
@@ -575,8 +576,10 @@ function addProgressBarToUI() {
   // Set intervals for updating progress bar and tokens amount
   setInterval(updateProgressBar, state.interval);
   setInterval(updateTokensAmount, 2000);
-  const darkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const color = darkTheme ? "50%" : "40%";
+  const darkTheme =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const color = darkTheme ? "50%" : "40%";
   updateTooltip(
     `Tokens: <span style='color: hsl(120, 100%, ${color});'>0</span>/4096`
   );
@@ -664,8 +667,6 @@ function calculateCumulativeTokens(chatMessages) {
 function countTokens(text) {
   if (text === "") return 0;
   const tokens = llamaTokenizer.encode(text);
-  console.log(text);
-  console.log(tokens.length);
   let numTokens =
     tokens.length < MAX_TOKENS
       ? Math.round(tokens.length * 0.85)
@@ -683,7 +684,7 @@ async function getChatMessagesText() {
   chatMessageElements.forEach((element) => {
     const clonedElement = cloneAndCleanMessage(element);
     let message = clonedElement.innerText.trim();
-    
+
     if (message.startsWith("ChatGPT")) {
       message = message.substring(7);
     }
@@ -692,7 +693,6 @@ async function getChatMessagesText() {
     }
     messages.push(message);
   });
-
 
   return messages;
 }
@@ -713,9 +713,11 @@ function cloneAndCleanMessage(element) {
 // Function to update the width of the progress bar and tooltip message
 function updateProgressBarWidth(cumulativeTokens) {
   let message = "";
-  
-  const darkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const color = darkTheme ? "50%" : "40%";
+
+  const darkTheme =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const color = darkTheme ? "50%" : "40%";
   if (cumulativeTokens >= MAX_TOKENS) {
     state.progressBar.style.width = "100%";
     state.progressBar.style.backgroundColor = "red";
@@ -867,3 +869,113 @@ const observerConfig = {
   subtree: true,
 };
 observer.observe(targetNode, observerConfig);
+
+
+
+let button = null;
+let parent = null;
+let sidebarOpen = false; // Initialize the sidebar state as closed
+
+let edgeThreshold = null;
+      // Threshold to determine how close to the left edge triggers the event
+edgeThreshold = updateThreshold(); // Adjust this value as needed
+
+function findButtons(isMobile) {
+  // Retrieve the button element by its class or attributes
+  const parentDiv = document.querySelector("div.mb-1 > a");
+  if (isMobile) {
+    button = document.querySelector(
+      'svg[stroke="currentColor"][fill="none"][stroke-width="2"][viewBox="0 0 24 24"][stroke-linecap="round"][stroke-linejoin="round"][class="icon-lg"][height="1em"][width="1em"][xmlns="http://www.w3.org/2000/svg"]'
+    ).parentElement;
+    
+  } else {
+    parent = parentDiv.parentElement;
+    if (parent.children[1]) {
+      button = parent.children[1].children[0];
+    }
+  }
+}
+
+function updateThreshold() {
+  // Calculate the threshold as 25% of the current visible screen width
+  edgeThreshold = 0.15 * window.innerWidth;
+  return edgeThreshold;
+}
+
+function handleResize(isMobile) {
+  updateThreshold();
+  findButtons(isMobile);
+  // Add an event listener to the document to track mouse movements
+  document.addEventListener("mousemove", handleMouseMovement);
+}
+
+function handleMouseMovement(event) {
+  // Get the X-coordinate of the mouse cursor
+  const mouseX = event.clientX;
+
+  if (!button) {
+    if (parent.children[1]) {
+      button = parent.children[1].children[0];
+    }
+  }
+
+  if (!button) {
+    return;
+  }
+
+  // Check if the mouse is close to the left edge
+  if (mouseX <= edgeThreshold) {
+    if (!sidebarOpen) {
+      button.click();
+      sidebarOpen = !sidebarOpen;
+    }
+  } else {
+    if (sidebarOpen) {
+      button.click();
+      sidebarOpen = !sidebarOpen;
+    }
+  }
+}
+
+function handleViewportChange(mediaQuery) {
+  if (mediaQuery.matches) {
+    handleResize(true);
+  } else {
+    handleResize(false);
+  }
+}
+
+// Load settings from Chrome storage and set state properties
+chrome.storage.sync.get(
+  ["autoFullMode"],
+  function (result) {
+    state.autoFullMode = result.autoFullMode !== false;
+
+    if (state.autoFullMode) {
+      // Add an event listener to the document to track mouse movements
+      document.addEventListener("mousemove", handleMouseMovement);
+
+      const divElement = document.querySelector(
+        "div.flex-shrink-0.overflow-x-hidden.dark.bg-gray-900.gizmo\\:bg-black"
+      );
+
+      if (divElement) {
+        console.log(divElement);
+        const computedStyle = window.getComputedStyle(divElement);
+        const displayProperty = computedStyle.getPropertyValue("width");
+
+        if (displayProperty === "0px") {
+          sidebarOpen = false;
+        } else {
+          sidebarOpen = true;
+        }
+      }
+
+      const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
+
+      handleViewportChange(mediaQuery); // Call it initially
+
+      mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
+    }
+  }
+);

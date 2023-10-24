@@ -3,6 +3,7 @@ document.getElementById("save-btn").addEventListener("click", function () {
   const interval = document.getElementById("interval-input").value;
   const showSaveButton = document.getElementById("show-save-button").checked;
   const showTokens = document.getElementById("show-tokens").checked;
+  const autoFullMode = document.getElementById("auto-full-mode").checked; // Add this line to get the checkbox value
 
   // Save all settings, including the progress bar size value
   chrome.storage.sync.set(
@@ -10,6 +11,7 @@ document.getElementById("save-btn").addEventListener("click", function () {
       interval,
       showSaveButton,
       showTokens,
+      autoFullMode, // Add the new setting
     },
     function () {
       console.log("Settings saved");
@@ -23,12 +25,15 @@ document.getElementById("save-btn").addEventListener("click", function () {
 
 // Load current settings when popup opens
 chrome.storage.sync.get(
-  ["interval", "showSaveButton", "showTokens"],
+  ["interval", "showSaveButton", "showTokens", "autoFullMode"], // Add "autoFullMode" to the list of settings
   function (result) {
     document.getElementById("interval-input").value = result.interval || 1000;
-    document.getElementById("show-save-button").checked = result.showSaveButton === true; // Defaults to true if not yet set
-    document.getElementById("show-tokens").checked = result.showTokens !== false; // Defaults to true if not yet set
-    
+    document.getElementById("show-save-button").checked =
+      result.showSaveButton === true;
+    document.getElementById("show-tokens").checked =
+      result.showTokens !== false;
+    document.getElementById("auto-full-mode").checked =
+      result.autoFullMode !== false; // Enforce to on as default
   }
 );
 

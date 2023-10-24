@@ -1,6 +1,6 @@
 // Define the extension version and update description
-const currentVersion = "1.4.4"; // Replace with your current extension version
-const updateDescription = `Now it count the token usage and show it with a cool progress bar that changes color based on the token usage!`;
+const currentVersion = "1.4.5"; // Replace with your current extension version
+const updateDescription = `Now it auto-toggles the chat history when mouse is close!`;
 
 // Check if the extension has been updated
 chrome.runtime.onInstalled.addListener(async function (details) {
