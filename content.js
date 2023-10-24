@@ -730,7 +730,7 @@ function updateProgressBarWidth(cumulativeTokens) {
     state.progressBar.style.width = width + "%";
     state.progressBar.style.backgroundColor = `hsl(${
       120 * (1 - width / 100)
-    }, 100%, ${color})`;
+    }, 100%, 50%)`;
 
     message = `Tokens: <span style="color: hsl(${
       120 * (1 - width / 100)
