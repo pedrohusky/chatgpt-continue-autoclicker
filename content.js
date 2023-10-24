@@ -506,7 +506,9 @@ function createTooltip() {
 function updateTheme() {
   // Check if textArea is available
   if (!state.textArea) return;
+  
   setTopProperty();
+
   const darkTheme =
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -533,9 +535,17 @@ function updateTooltipPosition(event) {
 
 // Function to add a progress bar to the UI
 function addProgressBarToUI() {
+  
+  setInterval(clickContinueButton(), state.interval);
+  
   if (!state.showTokens) return;
   state.textArea = document.getElementById("prompt-textarea");
+
+  if (!state.textArea) return;
+
   const parentElement = state.textArea.nextElementSibling;
+
+  if (!parentElement) return;
 
   if (document.querySelector(".progress-indicator")) return;
 
@@ -784,12 +794,10 @@ function clickContinueButton() {
 
 // Function to download text as a file
 function download(filename, text) {
-  const lines = text.replace("javascriptCopy code", "").split("\n");
-  const filteredText = lines.join("\n");
   const element = document.createElement("a");
   element.setAttribute(
     "href",
-    "data:text/plain;charset=utf-8," + encodeURIComponent(filteredText)
+    "data:text/plain;charset=utf-8," + encodeURIComponent(text)
   );
   element.setAttribute("download", filename);
   element.style.display = "none";
