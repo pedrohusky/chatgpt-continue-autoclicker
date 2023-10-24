@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Continue Generating Auto-Clicker",
-  "version": "1.4.4",
-  "description": "Enhance your ChatGPT experience with automated 'Continue generating' button click.",
+  "name": "ChatGPT Auto-Continue & Token Counter",
+  "version": "1.4.5",
+  "description": "Experience ChatGPT like never before with these features: Auto Full Mode, Automated 'Continue Generating', and Token Counter.",
   "background": {
     "service_worker": "background.js"
   },
