@@ -472,7 +472,7 @@ const state = {
   navBar: null,
   sidebarOpen: false, // Initialize the sidebar state as closed
   edgeThreshold: null, // Threshold to determine how close to the left edge triggers the event
-  sidebarTimeout,
+  sidebarTimeout: null,
 };
 
 // Append the tooltip to the document body
@@ -1157,7 +1157,7 @@ function handleViewportChange(mediaQuery) {
 /**
  * Updates the status of the side bar.
  *
- * @return {void} 
+ * @return {void}
  */
 function updateSideBarStatus() {
   const divElement = document.querySelector(
