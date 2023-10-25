@@ -472,6 +472,7 @@ const state = {
   navBar: null,
   sidebarOpen: false, // Initialize the sidebar state as closed
   edgeThreshold: null, // Threshold to determine how close to the left edge triggers the event
+  sidebarTimeout,
 };
 
 // Append the tooltip to the document body
@@ -487,7 +488,11 @@ chrome.storage.sync.get(
   }
 );
 
-// Function to create the tooltip element
+/**
+ * Creates a tooltip element.
+ *
+ * @return {HTMLElement} The created tooltip element.
+ */
 function createTooltip() {
   const tooltip = document.createElement("div");
   // Set tooltip styles
@@ -506,7 +511,11 @@ function createTooltip() {
   return tooltip;
 }
 
-// Function to update the theme based on user preferences
+/**
+ * Updates the theme based on the user's preference.
+ *
+ * @return {undefined} This function does not return any value.
+ */
 function updateTheme() {
   // Check if textArea is available
   if (!state.textArea) return;
@@ -529,7 +538,12 @@ function updateTheme() {
   state.lastColor = state.indicatorLineAbove.style.backgroundColor;
 }
 
-// Function to update the position of the tooltip based on mouse events
+/**
+ * Updates the position of the tooltip based on the provided event.
+ *
+ * @param {Event} event - The event object containing information about the event that triggered the update.
+ * @return {undefined} This function does not return a value.
+ */
 function updateTooltipPosition(event) {
   const x = event.clientX - 20;
   const y = event.clientY - 10 - state.tooltip.clientHeight;
@@ -537,7 +551,11 @@ function updateTooltipPosition(event) {
   state.tooltip.style.top = y + "px";
 }
 
-// Function to add a progress bar to the UI
+/**
+ * Adds a progress bar to the user interface.
+ *
+ * @return {undefined} No return value.
+ */
 function addProgressBarToUI() {
   setInterval(clickContinueButton(), state.interval);
 
@@ -598,7 +616,11 @@ function addProgressBarToUI() {
   );
 }
 
-// Function to set the 'top' property for a UI element
+/**
+ * Sets the 'bottom' CSS property of the parent element of the state's text area.
+ *
+ * @return {undefined} This function does not return a value.
+ */
 function setTopProperty() {
   if (!state.textArea) return;
   let parentElement = state.textArea.nextElementSibling;
@@ -608,32 +630,57 @@ function setTopProperty() {
   parentElement.style.bottom = window.innerWidth <= 767 ? "20px" : "26px";
 }
 
-// Function to insert a new node after a reference node
+/**
+ * Inserts a new node after a reference node in the DOM.
+ *
+ * @param {Node} newNode - The node to be inserted.
+ * @param {Node} referenceNode - The node after which the new node will be inserted.
+ * @return {void}
+ */
 function insertAfter(newNode, referenceNode) {
   referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
 
-// Function to add event listeners for progress bar and tooltip
+/**
+ * Shows the tooltip by changing its display style to "block" and gradually
+ * increasing its opacity over a small delay. Also adds an event listener to
+ * update the tooltip position based on mouse movement.
+ *
+ * @return {undefined} There is no return value.
+ */
+function showTooltip() {
+  state.tooltip.style.display = "block";
+  // Use a small delay to trigger the opacity transition
+  tooltipTimeout = setTimeout(() => {
+    state.tooltip.style.opacity = 1;
+  }, 1);
+
+  document.addEventListener("mousemove", updateTooltipPosition);
+}
+
+/**
+ * Hides the tooltip by setting its opacity to 0 and
+ * scheduling its display to be none after a delay.
+ *
+ * @param {none} none - This function does not take any parameters.
+ * @return {none} This function does not return any value.
+ */
+function hideTooltip() {
+  state.tooltip.style.opacity = 0;
+  tooltipTimeout = setTimeout(() => {
+    state.tooltip.style.display = "none";
+  }, 300); // Adjust the delay as needed to match the transition
+  document.removeEventListener("mousemove", updateTooltipPosition);
+}
+
+/**
+ * Adds event listeners to the elements on the page.
+ *
+ * @param {type} paramName - description of parameter
+ * @return {type} description of return value
+ */
 function addEventListeners() {
   let tooltipTimeout;
-
-  function showTooltip() {
-    state.tooltip.style.display = "block";
-    // Use a small delay to trigger the opacity transition
-    tooltipTimeout = setTimeout(() => {
-      state.tooltip.style.opacity = 1;
-    }, 1);
-
-    document.addEventListener("mousemove", updateTooltipPosition);
-  }
-
-  function hideTooltip() {
-    state.tooltip.style.opacity = 0;
-    tooltipTimeout = setTimeout(() => {
-      state.tooltip.style.display = "none";
-    }, 300); // Adjust the delay as needed to match the transition
-    document.removeEventListener("mousemove", updateTooltipPosition);
-  }
 
   state.progressBar.addEventListener("mouseover", () => {
     clearTimeout(tooltipTimeout); // Cancel the timeout
@@ -656,7 +703,11 @@ function addEventListeners() {
   });
 }
 
-// Function to update the progress bar
+/**
+ * Updates the progress bar.
+ *
+ * @return {undefined} No return value.
+ */
 function updateProgressBar() {
   clickContinueButton();
   updateTheme();
@@ -665,7 +716,11 @@ function updateProgressBar() {
   }
 }
 
-// Function to update the tokens amount and progress bar width
+/**
+ * Updates the amount of tokens based on the chat messages in the text area.
+ *
+ * @return {Promise<void>} A promise that resolves once the tokens have been updated.
+ */
 function updateTokensAmount() {
   if (!state.textArea) return;
   getChatMessagesText().then((chatMessages) => {
@@ -676,7 +731,12 @@ function updateTokensAmount() {
   });
 }
 
-// Function to check if chat messages are identical
+/**
+ * Checks if the given chat messages are identical to the last known messages.
+ *
+ * @param {Array} chatMessages - An array of chat messages.
+ * @return {boolean} Returns true if the chat messages are identical to the last known messages, otherwise false.
+ */
 function areChatMessagesIdentical(chatMessages) {
   const chatMessagesSet = new Set(chatMessages);
   const lastKnownMessagesSet = new Set(state.lastKnownMessages);
@@ -686,7 +746,12 @@ function areChatMessagesIdentical(chatMessages) {
   );
 }
 
-// Function to calculate the cumulative tokens in chat messages
+/**
+ * Calculates the cumulative number of tokens in a given array of chat messages.
+ *
+ * @param {Array} chatMessages - An array of chat messages.
+ * @return {number} The cumulative number of tokens.
+ */
 function calculateCumulativeTokens(chatMessages) {
   return chatMessages.reduce(
     (cumulativeTokens, message) => cumulativeTokens + countTokens(message),
@@ -694,7 +759,12 @@ function calculateCumulativeTokens(chatMessages) {
   );
 }
 
-// Function to count tokens in a text
+/**
+ * Counts the number of tokens in the given text using the LLama-tokenizer-js.
+ *
+ * @param {string} text - The text to count tokens in.
+ * @return {number} The number of tokens in the text.
+ */
 function countTokens(text) {
   if (text === "") return 0;
   const tokens = llamaTokenizer.encode(text);
@@ -705,7 +775,11 @@ function countTokens(text) {
   return numTokens;
 }
 
-// Function to get text from chat message elements
+/**
+ * Retrieves the text of chat messages from the DOM.
+ *
+ * @return {Array} An array containing the text of chat messages.
+ */
 async function getChatMessagesText() {
   const messages = [];
   const chatMessageElements = document.querySelectorAll(
@@ -728,7 +802,12 @@ async function getChatMessagesText() {
   return messages;
 }
 
-// Function to clone and clean a message element
+/**
+ * Clones and cleans a given element by removing buttons and resetting content.
+ *
+ * @param {HTMLElement} element - The element to clone and clean.
+ * @return {HTMLElement} The cloned and cleaned element.
+ */
 function cloneAndCleanMessage(element) {
   const clonedElement = element.cloneNode(true);
   const codeBlocks = clonedElement.querySelectorAll("pre");
@@ -742,7 +821,12 @@ function cloneAndCleanMessage(element) {
   return clonedElement;
 }
 
-// Function to update the width of the progress bar and tooltip message
+/**
+ * Updates the width of the progress bar based on the cumulative tokens.
+ *
+ * @param {number} cumulativeTokens - The cumulative number of tokens.
+ * @return {void} This function does not return anything.
+ */
 function updateProgressBarWidth(cumulativeTokens) {
   let message = "";
 
@@ -772,17 +856,30 @@ function updateProgressBarWidth(cumulativeTokens) {
   updateTooltip(message);
 }
 
-// Function to update the tooltip message
+/**
+ * Updates the tooltip with the given message.
+ *
+ * @param {string} message - The HTML message to be displayed in the tooltip.
+ */
 function updateTooltip(message) {
   state.tooltip.innerHTML = message;
 }
 
-// Function to update the last known chat messages
+/**
+ * Updates the last known messages in the state object.
+ *
+ * @param {Array} chatMessages - The array of chat messages to update the state with.
+ * @return {undefined} This function does not return a value.
+ */
 function updateLastKnownMessages(chatMessages) {
   state.lastKnownMessages = chatMessages;
 }
 
-// Function to simulate clicking the "Continue" button
+/**
+ * Clicks the continue button on the page.
+ *
+ * @return {undefined} This function does not return a value.
+ */
 function clickContinueButton() {
   const buttons = document.querySelectorAll(".btn");
   for (const button of buttons) {
@@ -814,7 +911,13 @@ function clickContinueButton() {
   }
 }
 
-// Function to download text as a file
+/**
+ * Downloads a file with the specified filename and content.
+ *
+ * @param {string} filename - The name of the file to be downloaded.
+ * @param {string} text - The content of the file.
+ * @return {undefined} This function does not return a value.
+ */
 function download(filename, text) {
   const element = document.createElement("a");
   element.setAttribute(
@@ -828,7 +931,12 @@ function download(filename, text) {
   document.body.removeChild(element);
 }
 
-// Function to add a "Save to File" button to code blocks
+/**
+ * Adds a "Save to File" button to each code block on the page.
+ *
+ * @param {type} No parameters are required.
+ * @return {type} No return value.
+ */
 function addSaveToFileButton() {
   const codeBlocks = document.querySelectorAll("pre");
   for (const codeBlock of codeBlocks) {
@@ -846,7 +954,12 @@ function addSaveToFileButton() {
   }
 }
 
-// Function to create a "Save to File" button for a code block
+/**
+ * Creates a save to file button with a given code block.
+ *
+ * @param {string} codeBlock - The code block to save to file.
+ * @return {HTMLElement} - The save to file button element.
+ */
 function createSaveToFileButton(codeBlock) {
   const button = document.createElement("button");
   button.className =
@@ -865,7 +978,12 @@ function createSaveToFileButton(codeBlock) {
   return button;
 }
 
-// Function to handle the "Save to File" button click
+/**
+ * Handles the click event of the "Save to File" button.
+ *
+ * @param {HTMLElement} codeBlock - The code block element to be saved.
+ * @return {undefined} This function does not return a value.
+ */
 function handleSaveToFileButtonClick(codeBlock) {
   let filename = prompt(
     `Enter the name for the ${getLanguageFromCodeBlock(codeBlock)} file`
@@ -890,7 +1008,12 @@ function handleSaveToFileButtonClick(codeBlock) {
   }
 }
 
-// Function to get the language from a code block
+/**
+ * Retrieves the language from a given code block element.
+ *
+ * @param {HTMLElement} codeBlock - The code block element to extract the language from.
+ * @return {string} The language extracted from the code block. If no language is found, it defaults to "text".
+ */
 function getLanguageFromCodeBlock(codeBlock) {
   const firstSpan = codeBlock.querySelector("span");
   if (firstSpan) {
@@ -911,6 +1034,12 @@ const observerConfig = {
 };
 observer.observe(targetNode, observerConfig);
 
+/**
+ * Finds the button element based on whether the device is mobile or not.
+ *
+ * @param {boolean} isMobile - Indicates if the device is mobile or not.
+ * @return {void} Does not return a value.
+ */
 function findButtons(isMobile) {
   // Retrieve the button element by its class or attributes
   const parentDiv = document.querySelector("div.mb-1 > a");
@@ -929,11 +1058,23 @@ function findButtons(isMobile) {
   }
 }
 
+/**
+ * Updates the threshold value used for determining if an element is at the edge of the screen.
+ *
+ * @param {number} width - The current visible screen width.
+ * @return {void} This function does not return anything.
+ */
 function updateThreshold() {
   // Calculate the threshold as 25% of the current visible screen width
   state.edgeThreshold = 0.18 * window.innerWidth;
 }
 
+/**
+ * Handles the resize event.
+ *
+ * @param {boolean} isMobile - Indicates if the device is a mobile device.
+ * @return {undefined} This function does not return a value.
+ */
 function handleResize(isMobile) {
   if (isMobile) {
     return;
@@ -945,8 +1086,12 @@ function handleResize(isMobile) {
   document.addEventListener("mousemove", handleMouseMovement);
 }
 
-let sidebarTimeout; // Variable to store the timeout ID
-
+/**
+ * Handle the mouse movement event.
+ *
+ * @param {MouseEvent} event - The mouse movement event.
+ * @return {void} This function does not return anything.
+ */
 function handleMouseMovement(event) {
   // Get the X-coordinate of the mouse cursor
   const mouseX = event.clientX;
@@ -966,11 +1111,11 @@ function handleMouseMovement(event) {
   if (mouseX <= state.edgeThreshold) {
     if (!state.sidebarOpen) {
       // Cancel the timeout if it's set
-      if (sidebarTimeout) {
-        clearTimeout(sidebarTimeout);
-        sidebarTimeout = null;
+      if (state.sidebarTimeout) {
+        clearTimeout(state.sidebarTimeout);
+        state.sidebarTimeout = null;
       }
-      sidebarTimeout = setTimeout(() => {
+      state.sidebarTimeout = setTimeout(() => {
         state.navButton.click();
       }, 10);
 
@@ -980,21 +1125,27 @@ function handleMouseMovement(event) {
     if (state.sidebarOpen) {
       state.navButton.click();
 
-      if (sidebarTimeout) {
-        clearTimeout(sidebarTimeout);
-        sidebarTimeout = null;
+      if (state.sidebarTimeout) {
+        clearTimeout(state.sidebarTimeout);
+        state.sidebarTimeout = null;
       }
 
       // Set a new timeout and store its ID
-      sidebarTimeout = setTimeout(() => {
+      state.sidebarTimeout = setTimeout(() => {
         updateSideBarStatus();
       }, 250);
-      
+
       state.sidebarOpen = !state.sidebarOpen;
     }
   }
 }
 
+/**
+ * Handles the viewport change based on the provided media query.
+ *
+ * @param {MediaQueryList} mediaQuery - The media query to be evaluated.
+ * @return {void} This function does not return a value.
+ */
 function handleViewportChange(mediaQuery) {
   if (mediaQuery.matches) {
     handleResize(true);
@@ -1003,6 +1154,11 @@ function handleViewportChange(mediaQuery) {
   }
 }
 
+/**
+ * Updates the status of the side bar.
+ *
+ * @return {void} 
+ */
 function updateSideBarStatus() {
   const divElement = document.querySelector(
     "div.flex-shrink-0.overflow-x-hidden.dark.bg-gray-900.gizmo\\:bg-black"
