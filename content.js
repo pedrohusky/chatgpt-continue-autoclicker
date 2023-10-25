@@ -656,7 +656,6 @@ function addEventListeners() {
   });
 }
 
-
 // Function to update the progress bar
 function updateProgressBar() {
   clickContinueButton();
@@ -925,6 +924,9 @@ function findButtons(isMobile) {
       state.navButton = state.navBar.children[1].children[0];
     }
   }
+  if (state.navButton) {
+    state.navButton.style.display = "none";
+  }
 }
 
 function updateThreshold() {
@@ -943,6 +945,8 @@ function handleResize(isMobile) {
   document.addEventListener("mousemove", handleMouseMovement);
 }
 
+let sidebarTimeout; // Variable to store the timeout ID
+
 function handleMouseMovement(event) {
   // Get the X-coordinate of the mouse cursor
   const mouseX = event.clientX;
@@ -950,26 +954,43 @@ function handleMouseMovement(event) {
   if (!state.navButton) {
     if (state.navBar.children[1]) {
       state.navButton = state.navBar.children[1].children[0];
+      state.navButton.style.display = "none";
     }
-  }
 
-  if (!state.navButton) {
-    return;
+    if (!state.navButton) {
+      return;
+    }
   }
 
   // Check if the mouse is close to the left edge
   if (mouseX <= state.edgeThreshold) {
     if (!state.sidebarOpen) {
-      state.navButton.click();
+      // Cancel the timeout if it's set
+      if (sidebarTimeout) {
+        clearTimeout(sidebarTimeout);
+        sidebarTimeout = null;
+      }
+      sidebarTimeout = setTimeout(() => {
+        state.navButton.click();
+      }, 10);
+
       state.sidebarOpen = !state.sidebarOpen;
     }
   } else {
     if (state.sidebarOpen) {
       state.navButton.click();
-      state.sidebarOpen = !state.sidebarOpen;
-      setTimeout(() => {
+
+      if (sidebarTimeout) {
+        clearTimeout(sidebarTimeout);
+        sidebarTimeout = null;
+      }
+
+      // Set a new timeout and store its ID
+      sidebarTimeout = setTimeout(() => {
         updateSideBarStatus();
       }, 250);
+      
+      state.sidebarOpen = !state.sidebarOpen;
     }
   }
 }
