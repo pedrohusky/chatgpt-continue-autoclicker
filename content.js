@@ -468,6 +468,10 @@ const state = {
   autoFullMode: null,
   lastKnownMessages: [],
   tooltip: createTooltip(),
+  navButton: null,
+  navBar: null,
+  sidebarOpen: false, // Initialize the sidebar state as closed
+  edgeThreshold: null, // Threshold to determine how close to the left edge triggers the event
 };
 
 // Append the tooltip to the document body
@@ -506,7 +510,7 @@ function createTooltip() {
 function updateTheme() {
   // Check if textArea is available
   if (!state.textArea) return;
-  
+
   setTopProperty();
 
   const darkTheme =
@@ -535,9 +539,8 @@ function updateTooltipPosition(event) {
 
 // Function to add a progress bar to the UI
 function addProgressBarToUI() {
-  
   setInterval(clickContinueButton(), state.interval);
-  
+
   if (!state.showTokens) return;
   state.textArea = document.getElementById("prompt-textarea");
 
@@ -612,28 +615,47 @@ function insertAfter(newNode, referenceNode) {
 
 // Function to add event listeners for progress bar and tooltip
 function addEventListeners() {
-  state.progressBar.addEventListener("mouseover", () => {
+  let tooltipTimeout;
+
+  function showTooltip() {
     state.tooltip.style.display = "block";
-    state.tooltip.style.opacity = 1;
+    // Use a small delay to trigger the opacity transition
+    tooltipTimeout = setTimeout(() => {
+      state.tooltip.style.opacity = 1;
+    }, 1);
+
     document.addEventListener("mousemove", updateTooltipPosition);
+  }
+
+  function hideTooltip() {
+    state.tooltip.style.opacity = 0;
+    tooltipTimeout = setTimeout(() => {
+      state.tooltip.style.display = "none";
+    }, 300); // Adjust the delay as needed to match the transition
+    document.removeEventListener("mousemove", updateTooltipPosition);
+  }
+
+  state.progressBar.addEventListener("mouseover", () => {
+    clearTimeout(tooltipTimeout); // Cancel the timeout
+    showTooltip();
   });
 
   state.progressBar.addEventListener("mouseout", () => {
-    state.tooltip.style.opacity = 0;
-    document.removeEventListener("mousemove", updateTooltipPosition);
+    clearTimeout(tooltipTimeout); // Cancel the timeout
+    hideTooltip();
   });
 
   state.indicatorLineAbove.addEventListener("mouseover", () => {
-    state.tooltip.style.display = "block";
-    state.tooltip.style.opacity = 1;
-    document.addEventListener("mousemove", updateTooltipPosition);
+    clearTimeout(tooltipTimeout); // Cancel the timeout
+    showTooltip();
   });
 
   state.indicatorLineAbove.addEventListener("mouseout", () => {
-    state.tooltip.style.opacity = 0;
-    document.removeEventListener("mousemove", updateTooltipPosition);
+    clearTimeout(tooltipTimeout); // Cancel the timeout
+    hideTooltip();
   });
 }
+
 
 // Function to update the progress bar
 function updateProgressBar() {
@@ -715,7 +737,8 @@ function cloneAndCleanMessage(element) {
     const buttons = codeBlock.querySelectorAll("button");
     buttons.forEach((button) => (button.innerHTML = ""));
     const firstSpan = codeBlock.querySelector("span");
-    firstSpan.innerHTML = "\n\n";
+
+    if (firstSpan) firstSpan.innerHTML = "\n\n";
   });
   return clonedElement;
 }
@@ -857,9 +880,12 @@ function handleSaveToFileButtonClick(codeBlock) {
     // Clone the code block and clean it
     const clonedBlock = codeBlock.cloneNode(true);
     const buttons = clonedBlock.querySelectorAll("button");
+
     buttons.forEach((button) => button.remove());
+
     const firstSpan = clonedBlock.querySelector("span");
-    firstSpan.remove();
+
+    if (firstSpan) firstSpan.remove();
 
     download(finalName, clonedBlock.innerText);
   }
@@ -871,7 +897,7 @@ function getLanguageFromCodeBlock(codeBlock) {
   if (firstSpan) {
     return firstSpan.textContent;
   }
-  return "text"; // Default to "text" if language is not recognized
+  return ""; // Default to "text" if language is not recognized
 }
 
 // Initialize a Set to keep track of processed code blocks
@@ -886,30 +912,24 @@ const observerConfig = {
 };
 observer.observe(targetNode, observerConfig);
 
-let button = null;
-let parent = null;
-let sidebarOpen = false; // Initialize the sidebar state as closed
-
-let edgeThreshold = null; // Threshold to determine how close to the left edge triggers the event
-
 function findButtons(isMobile) {
   // Retrieve the button element by its class or attributes
   const parentDiv = document.querySelector("div.mb-1 > a");
   if (isMobile) {
-    button = document.querySelector(
+    state.navButton = document.querySelector(
       'svg[stroke="currentColor"][fill="none"][stroke-width="2"][viewBox="0 0 24 24"][stroke-linecap="round"][stroke-linejoin="round"][class="icon-lg"][height="1em"][width="1em"][xmlns="http://www.w3.org/2000/svg"]'
     ).parentElement;
   } else {
-    parent = parentDiv.parentElement;
-    if (parent.children[1]) {
-      button = parent.children[1].children[0];
+    state.navBar = parentDiv.parentElement;
+    if (state.navBar.children[1]) {
+      state.navButton = state.navBar.children[1].children[0];
     }
   }
 }
 
 function updateThreshold() {
   // Calculate the threshold as 25% of the current visible screen width
-  edgeThreshold = 0.18 * window.innerWidth;
+  state.edgeThreshold = 0.18 * window.innerWidth;
 }
 
 function handleResize(isMobile) {
@@ -927,26 +947,26 @@ function handleMouseMovement(event) {
   // Get the X-coordinate of the mouse cursor
   const mouseX = event.clientX;
 
-  if (!button) {
-    if (parent.children[1]) {
-      button = parent.children[1].children[0];
+  if (!state.navButton) {
+    if (state.navBar.children[1]) {
+      state.navButton = state.navBar.children[1].children[0];
     }
   }
 
-  if (!button) {
+  if (!state.navButton) {
     return;
   }
 
   // Check if the mouse is close to the left edge
-  if (mouseX <= edgeThreshold) {
-    if (!sidebarOpen) {
-      button.click();
-      sidebarOpen = !sidebarOpen;
+  if (mouseX <= state.edgeThreshold) {
+    if (!state.sidebarOpen) {
+      state.navButton.click();
+      state.sidebarOpen = !state.sidebarOpen;
     }
   } else {
-    if (sidebarOpen) {
-      button.click();
-      sidebarOpen = !sidebarOpen;
+    if (state.sidebarOpen) {
+      state.navButton.click();
+      state.sidebarOpen = !state.sidebarOpen;
       setTimeout(() => {
         updateSideBarStatus();
       }, 250);
@@ -972,9 +992,9 @@ function updateSideBarStatus() {
     const displayProperty = computedStyle.getPropertyValue("width");
 
     if (displayProperty === "0px") {
-      sidebarOpen = false;
+      state.sidebarOpen = false;
     } else {
-      sidebarOpen = true;
+      state.sidebarOpen = true;
     }
   }
   updateThreshold();

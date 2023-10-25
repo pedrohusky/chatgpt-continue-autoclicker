@@ -38,15 +38,15 @@ chrome.storage.sync.get(
 );
 
 // Reload tabs
-document
-  .getElementById("reload-btn")
-  .addEventListener("click", async function () {
-    // Change the text of the reload button
-    document.getElementById("reload-btn").textContent = "Reload OpenAI Tabs";
+document.getElementById("reload-btn").addEventListener("click", function () {
+  // Change the text of the reload button
+  document.getElementById("reload-btn").textContent = "Reload OpenAI Tabs";
 
-    const tabs = await chrome.tabs.query({ url: "https://chat.openai.com/*" });
+  const tabs = chrome.tabs.query({ url: "https://chat.openai.com/*" });
 
+  tabs.then((tabs) => {
     tabs.forEach((tab) => {
       chrome.tabs.reload(tab.id);
     });
   });
+});
