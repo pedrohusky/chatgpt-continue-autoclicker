@@ -1,6 +1,6 @@
 // Define the extension version and update description
-const currentVersion = "1.4.5"; // Replace with your current extension version
-const updateDescription = `Now it auto-toggles the chat history when mouse is near!`;
+const currentVersion = "1.4.6"; // Replace with your current extension version
+const updateDescription = `Now it auto-toggles the chat history when mouse is near! And fixed some things`;
 
 // Check if the extension has been updated
 chrome.runtime.onInstalled.addListener(async function (details) {
