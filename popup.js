@@ -30,10 +30,9 @@ chrome.storage.sync.get(
     document.getElementById("interval-input").value = result.interval || 1000;
     document.getElementById("show-save-button").checked =
       result.showSaveButton === true;
-    document.getElementById("show-tokens").checked =
-      result.showTokens !== false;
     document.getElementById("auto-full-mode").checked =
       result.autoFullMode !== false; // Enforce to on as default
+    document.getElementById("show-tokens").checked = result.showTokens === true;
   }
 );
 

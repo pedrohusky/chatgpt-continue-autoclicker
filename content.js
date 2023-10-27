@@ -467,6 +467,7 @@ const state = {
   showTokens: null,
   autoFullMode: null,
   lastKnownMessages: [],
+  cumulativeTokens: 0,
   tooltip: createTooltip(),
   navButton: null,
   navBar: null,
@@ -548,9 +549,6 @@ function updateTooltipPosition(event) {
  * @return {undefined} No return value.
  */
 function addProgressBarToUI() {
-  setInterval(clickContinueButton, state.interval);
-  setInterval(addSaveToFileButton, 3000);
-
   if (!state.showTokens) return;
   state.textArea = document.getElementById("prompt-textarea");
 
@@ -596,10 +594,6 @@ function addProgressBarToUI() {
   addEventListeners();
   updateTheme();
 
-  // Set intervals for updating progress bar and tokens amount
-  setInterval(updateTheme, state.interval);
-  setInterval(updateTokensAmount, 3000);
-  
   const darkTheme =
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -644,7 +638,6 @@ function insertAfter(newNode, referenceNode) {
 function showTooltip() {
   state.tooltip.style.display = "block";
   // Use a small delay to trigger the opacity transition
-  clearInterval(state.tooltipTimeout);
   state.tooltipTimeout = setTimeout(() => {
     state.tooltip.style.opacity = 1;
   }, 1);
@@ -661,7 +654,6 @@ function showTooltip() {
  */
 function hideTooltip() {
   state.tooltip.style.opacity = 0;
-  clearInterval(state.tooltipTimeout);
   state.tooltipTimeout = setTimeout(() => {
     state.tooltip.style.display = "none";
   }, 300); // Adjust the delay as needed to match the transition
@@ -708,8 +700,13 @@ function updateTokensAmount() {
     areChatMessagesIdentical(chatMessages).then((identical) => {
       if (!identical) {
         calculateCumulativeTokens(chatMessages).then((cumulativeTokens) => {
-          updateProgressBarWidth(cumulativeTokens);
-          updateLastKnownMessages(chatMessages);
+          if (cumulativeTokens >= 4096) {
+            updateProgressBarWidth(4096);
+            updateLastKnownMessages(chatMessages, 4096);
+          } else {
+            updateProgressBarWidth(cumulativeTokens);
+            updateLastKnownMessages(chatMessages, cumulativeTokens);
+          }
         });
       }
     });
@@ -752,6 +749,7 @@ async function calculateCumulativeTokens(chatMessages) {
  */
 function countTokens(text) {
   if (text === "") return 0;
+  if (state.cumulativeTokens >= 4096) return 0;
   const tokens = llamaTokenizer.encode(text);
   let numTokens =
     tokens.length < MAX_TOKENS
@@ -822,10 +820,7 @@ function updateProgressBarWidth(cumulativeTokens) {
   if (cumulativeTokens >= MAX_TOKENS) {
     state.progressBar.style.width = "100%";
     state.progressBar.style.backgroundColor = "red";
-    message =
-      cumulativeTokens >= 8192
-        ? `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>You have exceeded the hard context window (8192 tokens).<br>I recommend opening a new chat. It won't remember the first messages.`
-        : `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>You have exceeded the context window. GPT may not be able to complete the task.<br>You can open a new chat to use the full context again`;
+    message = `Tokens: <span style="color: red;">> ${cumulativeTokens}</span><br>You have exceeded the context window. GPT may not be able to complete the task.<br>You can open a new chat to use the full context again`;
   } else {
     const width = (cumulativeTokens / MAX_TOKENS) * 100;
     state.progressBar.style.width = width + "%";
@@ -856,8 +851,9 @@ function updateTooltip(message) {
  * @param {Array} chatMessages - The array of chat messages to update the state with.
  * @return {undefined} This function does not return a value.
  */
-function updateLastKnownMessages(chatMessages) {
+function updateLastKnownMessages(chatMessages, tokens) {
   state.lastKnownMessages = chatMessages;
+  state.cumulativeTokens = tokens;
 }
 
 /**
@@ -1158,10 +1154,10 @@ function updateSideBarStatus() {
 chrome.storage.sync.get(
   ["interval", "showSaveButton", "showTokens", "autoFullMode"],
   function (result) {
-    state.interval = result.interval || 1000;
+    state.interval = result.interval || DEFAULT_INTERVAL;
     state.showSaveButton = result.showSaveButton || false;
     state.showTokens = result.showTokens || false;
-    state.autoFullMode = result.autoFullMode || false;
+    state.autoFullMode = result.autoFullMode !== false;
 
     if (state.autoFullMode) {
       updateSideBarStatus();
@@ -1172,6 +1168,18 @@ chrome.storage.sync.get(
 
       mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
     }
+
+    if (state.showTokens) {
+      // Set intervals for updating progress bar and tokens amount
+      setInterval(updateTheme, state.interval);
+      setInterval(updateTokensAmount, 3000);
+    }
+
+    if (state.showSaveButton) {
+      setInterval(addSaveToFileButton, 3500);
+    }
+
+    setInterval(clickContinueButton, state.interval);
   }
 );
 
