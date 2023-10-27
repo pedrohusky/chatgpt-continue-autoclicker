@@ -473,20 +473,11 @@ const state = {
   sidebarOpen: false, // Initialize the sidebar state as closed
   edgeThreshold: null, // Threshold to determine how close to the left edge triggers the event
   sidebarTimeout: null,
+  tooltipTimeout: null,
 };
 
 // Append the tooltip to the document body
 document.body.appendChild(state.tooltip);
-
-// Load settings from Chrome storage and set state properties
-chrome.storage.sync.get(
-  ["interval", "showSaveButton", "showTokens"],
-  function (result) {
-    state.interval = result.interval || 1000;
-    state.showSaveButton = result.showSaveButton || false;
-    state.showTokens = result.showTokens !== false;
-  }
-);
 
 /**
  * Creates a tooltip element.
@@ -557,7 +548,8 @@ function updateTooltipPosition(event) {
  * @return {undefined} No return value.
  */
 function addProgressBarToUI() {
-  setInterval(clickContinueButton(), state.interval);
+  setInterval(clickContinueButton, state.interval);
+  setInterval(addSaveToFileButton, 3000);
 
   if (!state.showTokens) return;
   state.textArea = document.getElementById("prompt-textarea");
@@ -605,8 +597,9 @@ function addProgressBarToUI() {
   updateTheme();
 
   // Set intervals for updating progress bar and tokens amount
-  setInterval(updateProgressBar, state.interval);
-  setInterval(updateTokensAmount, 2000);
+  setInterval(updateTheme, state.interval);
+  setInterval(updateTokensAmount, 3000);
+  
   const darkTheme =
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -651,7 +644,8 @@ function insertAfter(newNode, referenceNode) {
 function showTooltip() {
   state.tooltip.style.display = "block";
   // Use a small delay to trigger the opacity transition
-  tooltipTimeout = setTimeout(() => {
+  clearInterval(state.tooltipTimeout);
+  state.tooltipTimeout = setTimeout(() => {
     state.tooltip.style.opacity = 1;
   }, 1);
 
@@ -667,7 +661,8 @@ function showTooltip() {
  */
 function hideTooltip() {
   state.tooltip.style.opacity = 0;
-  tooltipTimeout = setTimeout(() => {
+  clearInterval(state.tooltipTimeout);
+  state.tooltipTimeout = setTimeout(() => {
     state.tooltip.style.display = "none";
   }, 300); // Adjust the delay as needed to match the transition
   document.removeEventListener("mousemove", updateTooltipPosition);
@@ -680,40 +675,25 @@ function hideTooltip() {
  * @return {type} description of return value
  */
 function addEventListeners() {
-  let tooltipTimeout;
-
   state.progressBar.addEventListener("mouseover", () => {
-    clearTimeout(tooltipTimeout); // Cancel the timeout
+    clearTimeout(state.tooltipTimeout); // Cancel the timeout
     showTooltip();
   });
 
   state.progressBar.addEventListener("mouseout", () => {
-    clearTimeout(tooltipTimeout); // Cancel the timeout
+    clearTimeout(state.tooltipTimeout); // Cancel the timeout
     hideTooltip();
   });
 
   state.indicatorLineAbove.addEventListener("mouseover", () => {
-    clearTimeout(tooltipTimeout); // Cancel the timeout
+    clearTimeout(state.tooltipTimeout); // Cancel the timeout
     showTooltip();
   });
 
   state.indicatorLineAbove.addEventListener("mouseout", () => {
-    clearTimeout(tooltipTimeout); // Cancel the timeout
+    clearTimeout(state.tooltipTimeout); // Cancel the timeout
     hideTooltip();
   });
-}
-
-/**
- * Updates the progress bar.
- *
- * @return {undefined} No return value.
- */
-function updateProgressBar() {
-  clickContinueButton();
-  updateTheme();
-  if (state.showSaveButton) {
-    addSaveToFileButton();
-  }
 }
 
 /**
@@ -723,11 +703,16 @@ function updateProgressBar() {
  */
 function updateTokensAmount() {
   if (!state.textArea) return;
+
   getChatMessagesText().then((chatMessages) => {
-    if (areChatMessagesIdentical(chatMessages)) return;
-    const cumulativeTokens = calculateCumulativeTokens(chatMessages);
-    updateProgressBarWidth(cumulativeTokens);
-    updateLastKnownMessages(chatMessages);
+    areChatMessagesIdentical(chatMessages).then((identical) => {
+      if (!identical) {
+        calculateCumulativeTokens(chatMessages).then((cumulativeTokens) => {
+          updateProgressBarWidth(cumulativeTokens);
+          updateLastKnownMessages(chatMessages);
+        });
+      }
+    });
   });
 }
 
@@ -737,7 +722,7 @@ function updateTokensAmount() {
  * @param {Array} chatMessages - An array of chat messages.
  * @return {boolean} Returns true if the chat messages are identical to the last known messages, otherwise false.
  */
-function areChatMessagesIdentical(chatMessages) {
+async function areChatMessagesIdentical(chatMessages) {
   const chatMessagesSet = new Set(chatMessages);
   const lastKnownMessagesSet = new Set(state.lastKnownMessages);
   return (
@@ -752,7 +737,7 @@ function areChatMessagesIdentical(chatMessages) {
  * @param {Array} chatMessages - An array of chat messages.
  * @return {number} The cumulative number of tokens.
  */
-function calculateCumulativeTokens(chatMessages) {
+async function calculateCumulativeTokens(chatMessages) {
   return chatMessages.reduce(
     (cumulativeTokens, message) => cumulativeTokens + countTokens(message),
     0
@@ -838,8 +823,8 @@ function updateProgressBarWidth(cumulativeTokens) {
     state.progressBar.style.width = "100%";
     state.progressBar.style.backgroundColor = "red";
     message =
-      cumulativeTokens >= 8168
-        ? `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>You have exceeded the hard context window (8168 tokens).<br>I recommend opening a new chat. It won't remember the first messages.`
+      cumulativeTokens >= 8192
+        ? `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>You have exceeded the hard context window (8192 tokens).<br>I recommend opening a new chat. It won't remember the first messages.`
         : `Tokens: <span style="color: red;">${cumulativeTokens}</span><br>You have exceeded the context window. GPT may not be able to complete the task.<br>You can open a new chat to use the full context again`;
   } else {
     const width = (cumulativeTokens / MAX_TOKENS) * 100;
@@ -938,6 +923,10 @@ function download(filename, text) {
  * @return {type} No return value.
  */
 function addSaveToFileButton() {
+  if (!state.showSaveButton) {
+    return;
+  }
+
   const codeBlocks = document.querySelectorAll("pre");
   for (const codeBlock of codeBlocks) {
     if (state.processedCodeBlocks.has(codeBlock)) continue;
@@ -1021,18 +1010,6 @@ function getLanguageFromCodeBlock(codeBlock) {
   }
   return ""; // Default to "text" if language is not recognized
 }
-
-// Initialize a Set to keep track of processed code blocks
-state.processedCodeBlocks = new Set();
-
-// Start observing changes in the document
-const targetNode = document.body;
-const observer = new MutationObserver(addProgressBarToUI);
-const observerConfig = {
-  childList: true,
-  subtree: true,
-};
-observer.observe(targetNode, observerConfig);
 
 /**
  * Finds the button element based on whether the device is mobile or not.
@@ -1178,16 +1155,34 @@ function updateSideBarStatus() {
 }
 
 // Load settings from Chrome storage and set state properties
-chrome.storage.sync.get(["autoFullMode"], function (result) {
-  state.autoFullMode = result.autoFullMode !== false;
+chrome.storage.sync.get(
+  ["interval", "showSaveButton", "showTokens", "autoFullMode"],
+  function (result) {
+    state.interval = result.interval || 1000;
+    state.showSaveButton = result.showSaveButton || false;
+    state.showTokens = result.showTokens || false;
+    state.autoFullMode = result.autoFullMode || false;
 
-  if (state.autoFullMode) {
-    updateSideBarStatus();
+    if (state.autoFullMode) {
+      updateSideBarStatus();
 
-    const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
+      const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
 
-    handleViewportChange(mediaQuery); // Call it initially
+      handleViewportChange(mediaQuery); // Call it initially
 
-    mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
+      mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
+    }
   }
-});
+);
+
+// Initialize a Set to keep track of processed code blocks
+state.processedCodeBlocks = new Set();
+
+// Start observing changes in the document
+const targetNode = document.body;
+const observer = new MutationObserver(addProgressBarToUI);
+const observerConfig = {
+  childList: true,
+  subtree: true,
+};
+observer.observe(targetNode, observerConfig);
