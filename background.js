@@ -1,6 +1,6 @@
 // Define the extension version and update description
-const currentVersion = "1.4.7"; // Replace with your current extension version
-const updateDescription = `Disabled enforced settings. Now only auto-continue is enabled as default.`;
+const currentVersion = "1.4.8"; // Replace with your current extension version
+const updateDescription = `Disabled enforced settings. Now only auto-continue is enabled as default. Fixed progress bar jumping.`;
 
 // Check if the extension has been updated
 chrome.runtime.onInstalled.addListener(async function (details) {

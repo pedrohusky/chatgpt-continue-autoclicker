@@ -736,11 +736,16 @@ async function areChatMessagesIdentical(chatMessages) {
  * @return {number} The cumulative number of tokens.
  */
 async function calculateCumulativeTokens(chatMessages) {
-  return chatMessages.reduce(
-    (cumulativeTokens, message) => cumulativeTokens + countTokens(message),
-    0
-  );
+  return chatMessages.reduce((cumulativeTokens, message) => {
+    const messageTokens = countTokens(message);
+    if (cumulativeTokens + messageTokens > 4096) {
+      // If adding the tokens from the current message exceeds the limit, stop counting
+      return 4096;
+    }
+    return cumulativeTokens + messageTokens;
+  }, 0);
 }
+
 
 /**
  * Counts the number of tokens in the given text using the LLama-tokenizer-js.
@@ -750,7 +755,6 @@ async function calculateCumulativeTokens(chatMessages) {
  */
 function countTokens(text) {
   if (text === "") return 0;
-  if (state.cumulativeTokens >= 4096) return 4096;
   const tokens = llamaTokenizer.encode(text);
   let numTokens =
     tokens.length < MAX_TOKENS
