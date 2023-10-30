@@ -700,6 +700,7 @@ function updateTokensAmount() {
     areChatMessagesIdentical(chatMessages).then((identical) => {
       if (!identical) {
         calculateCumulativeTokens(chatMessages).then((cumulativeTokens) => {
+          console.log("Calculated cumulative tokens:", cumulativeTokens);
           if (cumulativeTokens >= 4096) {
             updateProgressBarWidth(4096);
             updateLastKnownMessages(chatMessages, 4096);
@@ -749,7 +750,7 @@ async function calculateCumulativeTokens(chatMessages) {
  */
 function countTokens(text) {
   if (text === "") return 0;
-  if (state.cumulativeTokens >= 4096) return 0;
+  if (state.cumulativeTokens >= 4096) return 4096;
   const tokens = llamaTokenizer.encode(text);
   let numTokens =
     tokens.length < MAX_TOKENS
