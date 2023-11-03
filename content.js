@@ -614,7 +614,21 @@ function setTopProperty() {
   if (parentElement.className.includes("progress-indicator")) {
     parentElement = state.textArea.nextElementSibling.nextElementSibling;
   }
-  parentElement.style.bottom = window.innerWidth <= 767 ? "20px" : "26px";
+  parentElement = state.textArea.parentElement;
+  // Get all buttons
+  const buttons = parentElement.querySelectorAll("button");
+  for (let i = 0; i < buttons.length; i++) {
+    // if the button contains aria-label
+    if (buttons[i].getAttribute("aria-label")) {
+      buttons[i].style.bottom = window.innerWidth <= 767 ? "8px" : "5px";
+    }
+    else {
+      buttons[i].style.bottom = window.innerWidth <= 767 ? "15px" : "18px";
+    }
+  }
+
+  state.textArea.style.paddingBottom = window.innerWidth <= 767 ? "0.15rem" : "0.25rem";
+  state.textArea.style.paddingTop = window.innerWidth <= 767 ? "0.5rem" : "0.9rem";
 }
 
 /**

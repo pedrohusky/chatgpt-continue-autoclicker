@@ -1,6 +1,6 @@
 // Define the extension version and update description
-const currentVersion = "1.4.8"; // Replace with your current extension version
-const updateDescription = `Disabled enforced settings. Now only auto-continue is enabled as default. Fixed progress bar jumping.`;
+const currentVersion = "1.4.9"; // Replace with your current extension version
+const updateDescription = `Re-added icon! Fixed small error in position because of the new update on ChatGPT`;
 
 // Check if the extension has been updated
 chrome.runtime.onInstalled.addListener(async function (details) {
