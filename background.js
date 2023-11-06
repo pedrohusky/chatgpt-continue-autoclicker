@@ -1,6 +1,6 @@
 // Define the extension version and update description
-const currentVersion = "1.4.9"; // Replace with your current extension version
-const updateDescription = `Re-added icon! Fixed small error in position because of the new update on ChatGPT`;
+const currentVersion = "1.5.0"; // Replace with your current extension version
+const updateDescription = `Fixed Auto Full Mode not working after latest ChatGPT update.`;
 
 // Check if the extension has been updated
 chrome.runtime.onInstalled.addListener(async function (details) {

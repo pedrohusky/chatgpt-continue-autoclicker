@@ -621,14 +621,15 @@ function setTopProperty() {
     // if the button contains aria-label
     if (buttons[i].getAttribute("aria-label")) {
       buttons[i].style.bottom = window.innerWidth <= 767 ? "8px" : "5px";
-    }
-    else {
+    } else {
       buttons[i].style.bottom = window.innerWidth <= 767 ? "15px" : "18px";
     }
   }
 
-  state.textArea.style.paddingBottom = window.innerWidth <= 767 ? "0.15rem" : "0.25rem";
-  state.textArea.style.paddingTop = window.innerWidth <= 767 ? "0.5rem" : "0.9rem";
+  state.textArea.style.paddingBottom =
+    window.innerWidth <= 767 ? "0.15rem" : "0.25rem";
+  state.textArea.style.paddingTop =
+    window.innerWidth <= 767 ? "0.5rem" : "0.9rem";
 }
 
 /**
@@ -759,7 +760,6 @@ async function calculateCumulativeTokens(chatMessages) {
     return cumulativeTokens + messageTokens;
   }, 0);
 }
-
 
 /**
  * Counts the number of tokens in the given text using the LLama-tokenizer-js.
@@ -1032,21 +1032,16 @@ function getLanguageFromCodeBlock(codeBlock) {
  * @param {boolean} isMobile - Indicates if the device is mobile or not.
  * @return {void} Does not return a value.
  */
-function findButtons(isMobile) {
-  // Retrieve the button element by its class or attributes
-  const parentDiv = document.querySelector("div.mb-1 > a");
-  if (isMobile) {
-    state.navButton = document.querySelector(
-      'svg[stroke="currentColor"][fill="none"][stroke-width="2"][viewBox="0 0 24 24"][stroke-linecap="round"][stroke-linejoin="round"][class="icon-lg"][height="1em"][width="1em"][xmlns="http://www.w3.org/2000/svg"]'
-    ).parentElement;
-  } else {
-    state.navBar = parentDiv.parentElement;
-    if (state.navBar.children[1]) {
-      state.navButton = state.navBar.children[1].children[0];
-    }
-  }
+function findButtons() {
+  try {
+    // Retrieve the button element by its class or attributes
+  state.navBar = document.querySelector("nav");
+  state.navButton = state.navBar.querySelectorAll("a")[1];
   if (state.navButton) {
     state.navButton.style.display = "none";
+  }
+  } catch (error) {
+    console.log(error);
   }
 }
 
@@ -1089,8 +1084,8 @@ function handleMouseMovement(event) {
   const mouseX = event.clientX;
 
   if (!state.navButton) {
-    if (state.navBar.children[1]) {
-      state.navButton = state.navBar.children[1].children[0];
+    state.navButton = state.navBar.querySelectorAll("a")[1];
+    if (state.navButton) {
       state.navButton.style.display = "none";
     }
 
@@ -1178,24 +1173,36 @@ chrome.storage.sync.get(
     state.showTokens = result.showTokens || false;
     state.autoFullMode = result.autoFullMode !== false;
 
-    if (state.autoFullMode) {
-      updateSideBarStatus();
+    try {
+      if (state.autoFullMode) {
+        updateSideBarStatus();
 
-      const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
+        const mediaQuery = window.matchMedia("(max-width: 768px)"); // Adjust the media query as needed
 
-      handleViewportChange(mediaQuery); // Call it initially
+        handleViewportChange(mediaQuery); // Call it initially
 
-      mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
+        mediaQuery.addEventListener("change", handleViewportChange); // Add a listener for changes in the viewport size
+      }
+    } catch (error) {
+      console.error(`Error: ${error}`);
     }
 
-    if (state.showTokens) {
-      // Set intervals for updating progress bar and tokens amount
-      setInterval(updateTheme, state.interval);
-      setInterval(updateTokensAmount, 3000);
+    try {
+      if (state.showTokens) {
+        // Set intervals for updating progress bar and tokens amount
+        setInterval(updateTheme, state.interval);
+        setInterval(updateTokensAmount, 3000);
+      }
+    } catch (error) {
+      console.error(`Error: ${error}`);
     }
 
-    if (state.showSaveButton) {
-      setInterval(addSaveToFileButton, 3500);
+    try {
+      if (state.showSaveButton) {
+        setInterval(addSaveToFileButton, 3500);
+      }
+    } catch (error) {
+      console.error(`Error: ${error}`);
     }
 
     setInterval(clickContinueButton, state.interval);
