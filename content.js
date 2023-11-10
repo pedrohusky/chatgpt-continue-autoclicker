@@ -1035,11 +1035,25 @@ function getLanguageFromCodeBlock(codeBlock) {
 function findButtons() {
   try {
     // Retrieve the button element by its class or attributes
-  state.navBar = document.querySelector("nav");
-  state.navButton = state.navBar.querySelectorAll("a")[1];
-  if (state.navButton) {
-    state.navButton.style.display = "none";
-  }
+    state.navBar = document.querySelector("nav");
+    state.navButton = state.navBar.querySelectorAll("a")[1];
+
+    if (!state.navButton) {
+      return;
+    }
+
+    // it must contain a line and a rect
+    let line = state.navButton.querySelector("line");
+    let rect = state.navButton.querySelector("rect");
+
+    if (!line && !rect) {
+      return;
+    }
+    console.log(line, rect);
+
+    if (state.navButton) {
+      state.navButton.style.display = "none";
+    }
   } catch (error) {
     console.log(error);
   }
@@ -1067,7 +1081,7 @@ function handleResize(isMobile) {
     return;
   }
   updateThreshold();
-  findButtons(isMobile);
+  findButtons();
   // Add an event listener to the document to track mouse movements
   document.removeEventListener("mousemove", handleMouseMovement);
   document.addEventListener("mousemove", handleMouseMovement);
@@ -1084,10 +1098,7 @@ function handleMouseMovement(event) {
   const mouseX = event.clientX;
 
   if (!state.navButton) {
-    state.navButton = state.navBar.querySelectorAll("a")[1];
-    if (state.navButton) {
-      state.navButton.style.display = "none";
-    }
+    findButtons();
 
     if (!state.navButton) {
       return;
