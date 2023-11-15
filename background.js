@@ -1,6 +1,6 @@
 // Define the extension version and update description
-const currentVersion = "1.5.1"; // Replace with your current extension version
-const updateDescription = `Improved Auto Full Mode. It should not give issues now.`;
+const currentVersion = "1.5.2"; // Replace with your current extension version
+const updateDescription = `Fixed ALL ISSUES. I got access to the new UI. It is now working better than ever.`;
 
 // Check if the extension has been updated
 chrome.runtime.onInstalled.addListener(async function (details) {

@@ -475,6 +475,7 @@ const state = {
   edgeThreshold: null, // Threshold to determine how close to the left edge triggers the event
   sidebarTimeout: null,
   tooltipTimeout: null,
+  mouseHandler: null,
 };
 
 // Append the tooltip to the document body
@@ -514,10 +515,27 @@ function updateTheme() {
 
   setTopProperty();
 
-  const darkTheme =
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const themeColor = darkTheme ? "rgb(52, 53, 65)" : "rgb(236, 236, 241)";
+  const mainDiv = document.querySelector("body");
+
+  // Get the computed style of the div
+const computedStyle = window.getComputedStyle(mainDiv);
+
+// Get the background color in RGBA format
+const bgColor = computedStyle.backgroundColor;
+
+// Define the target color
+const targetColor = 'rgb(52, 53, 65)';
+
+let darkTheme = false;
+
+// Check if the background color matches the target color
+if (bgColor === targetColor) {
+  darkTheme = true;
+} else {
+  darkTheme = false;
+}
+
+  const themeColor = darkTheme ? "rgb(45, 45, 57)" : "rgb(246, 246, 251)";
 
   if (themeColor === state.lastColor) return;
 
@@ -784,9 +802,7 @@ function countTokens(text) {
  */
 async function getChatMessagesText() {
   const messages = [];
-  const chatMessageElements = document.querySelectorAll(
-    ".group.w-full.text-token-text-primary"
-  );
+  const chatMessageElements = document.querySelectorAll("div[data-testid]");
 
   chatMessageElements.forEach((element) => {
     const clonedElement = cloneAndCleanMessage(element);
@@ -1034,30 +1050,28 @@ function getLanguageFromCodeBlock(codeBlock) {
  */
 function findButtons() {
   try {
-    // Retrieve the button element by its class or attributes
-    state.navBar = document.querySelector("nav");
-    state.navButton = state.navBar.querySelectorAll("a")[1];
-
-    if (!state.navButton) {
+    // Check if the button is already present in the document
+    if (state.navButton && document.contains(state.navButton)) {
       return;
-    }
+    } else {
+      // Retrieve the button element by its class or attributes
+      state.navButton = document.querySelector('.flex.h-6.w-6.flex-col.items-center > div');
 
-    // it must contain a line and a rect
-    let line = state.navButton.querySelector("line");
-    let rect = state.navButton.querySelector("rect");
+      console.log(state.navButton);
 
-    if (!line && !rect) {
-      return;
-    }
-    console.log(line, rect);
+      if (!state.navButton) {
+        return;
+      }
 
-    if (state.navButton) {
-      state.navButton.style.display = "none";
+      // If the button is found, hide its parent elements
+      state.navButton.parentElement.parentElement.style.display = "none";
+      console.log(state.navButton.parentElement.parentElement);
     }
   } catch (error) {
     console.log(error);
   }
 }
+
 
 /**
  * Updates the threshold value used for determining if an element is at the edge of the screen.
@@ -1080,8 +1094,8 @@ function handleResize(isMobile) {
   if (isMobile) {
     return;
   }
-  updateThreshold();
   findButtons();
+  updateSideBarStatus();
   // Add an event listener to the document to track mouse movements
   document.removeEventListener("mousemove", handleMouseMovement);
   document.addEventListener("mousemove", handleMouseMovement);
@@ -1097,16 +1111,11 @@ function handleMouseMovement(event) {
   // Get the X-coordinate of the mouse cursor
   const mouseX = event.clientX;
 
-  if (!state.navButton) {
-    findButtons();
-
-    if (!state.navButton) {
-      return;
-    }
-  }
-
   // Check if the mouse is close to the left edge
-  if (mouseX <= state.edgeThreshold) {
+  if (mouseX <= state.edgeThreshold && !state.mouseHandler) {
+    state.mouseHandler = true;
+    findButtons();
+    console.log(updateSideBarStatus());
     if (!state.sidebarOpen) {
       // Cancel the timeout if it's set
       if (state.sidebarTimeout) {
@@ -1119,7 +1128,8 @@ function handleMouseMovement(event) {
 
       state.sidebarOpen = !state.sidebarOpen;
     }
-  } else {
+  } else if (mouseX >= state.edgeThreshold && state.mouseHandler) {
+    state.mouseHandler = false;
     if (state.sidebarOpen) {
       state.navButton.click();
 
@@ -1173,6 +1183,8 @@ function updateSideBarStatus() {
     }
   }
   updateThreshold();
+
+  return state.sidebarOpen;
 }
 
 // Load settings from Chrome storage and set state properties
@@ -1217,6 +1229,7 @@ chrome.storage.sync.get(
     }
 
     setInterval(clickContinueButton, state.interval);
+
   }
 );
 
