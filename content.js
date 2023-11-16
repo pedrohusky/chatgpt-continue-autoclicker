@@ -589,8 +589,8 @@ function addProgressBarToUI() {
   state.indicatorLineAbove.style.boxShadow = "0px 1px 2px rgba(0, 0, 0, 0.3)";
   state.indicatorLineAbove.style.marginTop = "5px";
   state.indicatorLineAbove.style.marginBottom = "5px";
-  state.indicatorLineAbove.style.marginRight = "9px";
-  state.indicatorLineAbove.style.marginLeft = "9px";
+  state.indicatorLineAbove.style.marginRight = "12px";
+  state.indicatorLineAbove.style.marginLeft = "12px";
   state.indicatorLineAbove.style.borderRadius = "25px";
   state.indicatorLineAbove.style.height = "6.5px";
 
