@@ -1057,18 +1057,14 @@ function findButtons() {
       // Retrieve the button element by its class or attributes
       state.navButton = document.querySelector('.flex.h-6.w-6.flex-col.items-center > div');
 
-      console.log(state.navButton);
-
       if (!state.navButton) {
         return;
       }
 
       // If the button is found, hide its parent elements
       state.navButton.parentElement.parentElement.style.display = "none";
-      console.log(state.navButton.parentElement.parentElement);
     }
   } catch (error) {
-    console.log(error);
   }
 }
 
@@ -1115,9 +1111,10 @@ function handleMouseMovement(event) {
   if (mouseX <= state.edgeThreshold && !state.mouseHandler) {
     state.mouseHandler = true;
     findButtons();
-    console.log(updateSideBarStatus());
-    if (!state.sidebarOpen) {
-      // Cancel the timeout if it's set
+    updateSideBarStatus();
+    if (!state.sidebarOpen && state.navButton) {
+      try {
+        // Cancel the timeout if it's set
       if (state.sidebarTimeout) {
         clearTimeout(state.sidebarTimeout);
         state.sidebarTimeout = null;
@@ -1127,23 +1124,30 @@ function handleMouseMovement(event) {
       }, 10);
 
       state.sidebarOpen = !state.sidebarOpen;
+      } catch (error) {
+        
+      }
     }
   } else if (mouseX >= state.edgeThreshold && state.mouseHandler) {
     state.mouseHandler = false;
-    if (state.sidebarOpen) {
-      state.navButton.click();
+    if (state.sidebarOpen && state.navButton) {
+      try {
+        state.navButton.click();
 
-      if (state.sidebarTimeout) {
-        clearTimeout(state.sidebarTimeout);
-        state.sidebarTimeout = null;
+        if (state.sidebarTimeout) {
+          clearTimeout(state.sidebarTimeout);
+          state.sidebarTimeout = null;
+        }
+
+        // Set a new timeout and store its ID
+        state.sidebarTimeout = setTimeout(() => {
+          updateSideBarStatus();
+        }, 250);
+
+        state.sidebarOpen = !state.sidebarOpen;
+      } catch (error) {
+        
       }
-
-      // Set a new timeout and store its ID
-      state.sidebarTimeout = setTimeout(() => {
-        updateSideBarStatus();
-      }, 250);
-
-      state.sidebarOpen = !state.sidebarOpen;
     }
   }
 }
