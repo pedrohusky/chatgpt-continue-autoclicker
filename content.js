@@ -518,22 +518,22 @@ function updateTheme() {
   const mainDiv = document.querySelector("body");
 
   // Get the computed style of the div
-const computedStyle = window.getComputedStyle(mainDiv);
+  const computedStyle = window.getComputedStyle(mainDiv);
 
-// Get the background color in RGBA format
-const bgColor = computedStyle.backgroundColor;
+  // Get the background color in RGBA format
+  const bgColor = computedStyle.backgroundColor;
 
-// Define the target color
-const targetColor = 'rgb(52, 53, 65)';
+  // Define the target color
+  const targetColor = "rgb(52, 53, 65)";
 
-let darkTheme = false;
+  let darkTheme = false;
 
-// Check if the background color matches the target color
-if (bgColor === targetColor) {
-  darkTheme = true;
-} else {
-  darkTheme = false;
-}
+  // Check if the background color matches the target color
+  if (bgColor === targetColor) {
+    darkTheme = true;
+  } else {
+    darkTheme = false;
+  }
 
   const themeColor = darkTheme ? "rgb(45, 45, 57)" : "rgb(246, 246, 251)";
 
@@ -733,7 +733,6 @@ function updateTokensAmount() {
     areChatMessagesIdentical(chatMessages).then((identical) => {
       if (!identical) {
         calculateCumulativeTokens(chatMessages).then((cumulativeTokens) => {
-          console.log("Calculated cumulative tokens:", cumulativeTokens);
           if (cumulativeTokens >= 4096) {
             updateProgressBarWidth(4096);
             updateLastKnownMessages(chatMessages, 4096);
@@ -802,18 +801,33 @@ function countTokens(text) {
  */
 async function getChatMessagesText() {
   const messages = [];
-  const chatMessageElements = document.querySelectorAll("div[data-testid]");
-
+  const chatMessageElements = Array.from(
+    document.querySelectorAll("div[data-testid]")
+  );
+  
   chatMessageElements.forEach((element) => {
+
+    // Clone and clean the message
     const clonedElement = cloneAndCleanMessage(element);
     let message = clonedElement.innerText.trim();
+
+    // Modify the message if needed
+    if (message.startsWith("You")) {
+      message = message.substring(3);
+    }
 
     if (message.startsWith("ChatGPT")) {
       message = message.substring(7);
     }
+
+    if (message.startsWith("ChatGPT")) {
+      message = message.substring(7);
+    }
+
     if (message.startsWith("1 / 1")) {
       message = message.substring(5);
     }
+
     messages.push(message);
   });
 
@@ -960,14 +974,16 @@ function addSaveToFileButton() {
 
   const codeBlocks = document.querySelectorAll("pre");
   for (const codeBlock of codeBlocks) {
-    if (state.processedCodeBlocks.has(codeBlock)) continue;
+    // add the attribute to not process the code block again
+    if (codeBlock.hasAttribute("data-savetofile")) continue;
+    codeBlock.setAttribute("data-savetofile", "");
+
     try {
       const button = createSaveToFileButton(codeBlock);
       codeBlock.parentElement.insertBefore(
         button,
         codeBlock.nextElementSibling
       );
-      state.processedCodeBlocks.add(codeBlock);
     } catch (error) {
       continue;
     }
@@ -1055,7 +1071,9 @@ function findButtons() {
       return;
     } else {
       // Retrieve the button element by its class or attributes
-      state.navButton = document.querySelector('.flex.h-6.w-6.flex-col.items-center > div');
+      state.navButton = document.querySelector(
+        ".flex.h-6.w-6.flex-col.items-center > div"
+      );
 
       if (!state.navButton) {
         return;
@@ -1063,11 +1081,11 @@ function findButtons() {
 
       // If the button is found, hide its parent elements
       state.navButton.parentElement.parentElement.style.display = "none";
+      
+      updateSideBarStatus();
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 }
-
 
 /**
  * Updates the threshold value used for determining if an element is at the edge of the screen.
@@ -1111,43 +1129,19 @@ function handleMouseMovement(event) {
   if (mouseX <= state.edgeThreshold && !state.mouseHandler) {
     state.mouseHandler = true;
     findButtons();
-    updateSideBarStatus();
     if (!state.sidebarOpen && state.navButton) {
       try {
-        // Cancel the timeout if it's set
-      if (state.sidebarTimeout) {
-        clearTimeout(state.sidebarTimeout);
-        state.sidebarTimeout = null;
-      }
-      state.sidebarTimeout = setTimeout(() => {
         state.navButton.click();
-      }, 10);
-
-      state.sidebarOpen = !state.sidebarOpen;
-      } catch (error) {
-        
-      }
+        updateSideBarStatus(true);
+      } catch (error) {}
     }
   } else if (mouseX >= state.edgeThreshold && state.mouseHandler) {
     state.mouseHandler = false;
     if (state.sidebarOpen && state.navButton) {
       try {
         state.navButton.click();
-
-        if (state.sidebarTimeout) {
-          clearTimeout(state.sidebarTimeout);
-          state.sidebarTimeout = null;
-        }
-
-        // Set a new timeout and store its ID
-        state.sidebarTimeout = setTimeout(() => {
-          updateSideBarStatus();
-        }, 250);
-
-        state.sidebarOpen = !state.sidebarOpen;
-      } catch (error) {
-        
-      }
+        updateSideBarStatus(true);
+      } catch (error) {}
     }
   }
 }
@@ -1171,7 +1165,11 @@ function handleViewportChange(mediaQuery) {
  *
  * @return {void}
  */
-function updateSideBarStatus() {
+function updateSideBarStatus(isFlipFlop = false) {
+  if (isFlipFlop) {
+    state.sidebarOpen = !state.sidebarOpen;
+    return;
+  }
   const divElement = document.querySelector(
     "div.flex-shrink-0.overflow-x-hidden.dark.bg-gray-900.gizmo\\:bg-black"
   );
@@ -1233,12 +1231,8 @@ chrome.storage.sync.get(
     }
 
     setInterval(clickContinueButton, state.interval);
-
   }
 );
-
-// Initialize a Set to keep track of processed code blocks
-state.processedCodeBlocks = new Set();
 
 // Start observing changes in the document
 const targetNode = document.body;
@@ -1248,3 +1242,11 @@ const observerConfig = {
   subtree: true,
 };
 observer.observe(targetNode, observerConfig);
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.action === "urlChanged") {
+    const newURL = request.url;
+    state.cumulativeTokens = 0;
+    state.lastKnownMessages = [];
+  }
+});

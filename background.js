@@ -47,3 +47,22 @@ chrome.notifications.onButtonClicked.addListener(async function () {
     chrome.tabs.reload(tab.id);
   });
 });
+
+try {
+  chrome.webNavigation.onHistoryStateUpdated.addListener(
+    function (details) {
+      const url = details.url;
+      console.log("URL changed:", url);
+
+      // Send a message to content scripts
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "urlChanged", url: url });
+      });
+    },
+    { url: [{ schemes: ["http", "https"] }] }
+  );
+} catch (error) {
+  
+}
+
+
