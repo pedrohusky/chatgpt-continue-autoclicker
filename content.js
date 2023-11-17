@@ -1242,11 +1242,3 @@ const observerConfig = {
   subtree: true,
 };
 observer.observe(targetNode, observerConfig);
-
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  if (request.action === "urlChanged") {
-    const newURL = request.url;
-    state.cumulativeTokens = 0;
-    state.lastKnownMessages = [];
-  }
-});

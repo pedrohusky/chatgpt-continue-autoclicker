@@ -1,5 +1,5 @@
 // Define the extension version and update description
-const currentVersion = "1.5.2"; // Replace with your current extension version
+const currentVersion = "1.5.3"; // Replace with your current extension version
 const updateDescription = `Fixed ALL ISSUES. I got access to the new UI. It is now working better than ever.`;
 
 // Check if the extension has been updated
@@ -48,21 +48,5 @@ chrome.notifications.onButtonClicked.addListener(async function () {
   });
 });
 
-try {
-  chrome.webNavigation.onHistoryStateUpdated.addListener(
-    function (details) {
-      const url = details.url;
-      console.log("URL changed:", url);
-
-      // Send a message to content scripts
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "urlChanged", url: url });
-      });
-    },
-    { url: [{ schemes: ["http", "https"] }] }
-  );
-} catch (error) {
-  
-}
 
 

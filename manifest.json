@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Auto-Continue & Token Counter",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Experience ChatGPT like never before with these features: Auto Full Mode, Automated 'Continue Generating', and Token Counter.",
   "background": {
     "service_worker": "background.js"
