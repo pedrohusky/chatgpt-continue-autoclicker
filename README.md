@@ -4,7 +4,7 @@ The ⚙️ **ChatGPT Continue Generating Auto-Clicker** extension enhances your 
 
 ## Recent Updates
 
-**IMPORTANT NOTE:** From **UPDATE 1.4.4 ON CHROME STORE**, the Auto-Continue is linked to the token usage. It is fixed in the last commit here. But **Google is pending approval of update 1.4.5**. The fix will possibly be live on 1.4.6. I'm deeply sorry for missing that.
+TODO README PLEASE READ THE UPDATED ON CHROME EXTENSION STORE
 
 - 🔄 **Update 1.1.0**: The extension now prompts users to reload their active OpenAI ChatGPT tabs, if any are open.
 - 📱 **Update 1.2.0**: Improved Mobile View - Optimized for a seamless experience on mobile devices.
