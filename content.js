@@ -1171,7 +1171,7 @@ function updateSideBarStatus(isFlipFlop = false) {
     return;
   }
   const divElement = document.querySelector(
-    "div.flex-shrink-0.overflow-x-hidden.dark.bg-gray-900.gizmo\\:bg-black"
+    "div.dark.flex-shrink-0.overflow-x-hidden.bg-black"
   );
 
   if (divElement) {
