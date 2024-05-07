@@ -41,7 +41,7 @@ document.getElementById("reload-btn").addEventListener("click", function () {
   // Change the text of the reload button
   document.getElementById("reload-btn").textContent = "Reload OpenAI Tabs";
 
-  const tabs = chrome.tabs.query({ url: "https://chat.openai.com/*" });
+  const tabs = chrome.tabs.query({ url: "https://chatgpt.com/*" });
 
   tabs.then((tabs) => {
     tabs.forEach((tab) => {

@@ -8,10 +8,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://chat.openai.com/*"],
+      "matches": ["https://chatgpt.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["tabs", "notifications", "https://chat.openai.com/*"]
+  "permissions": ["tabs", "notifications", "https://chatgpt.com/*"]
 }

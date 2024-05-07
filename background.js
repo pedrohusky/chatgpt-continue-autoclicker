@@ -6,7 +6,7 @@ const updateDescription = `Fixed new update on the UI of ChatGPT causing issues 
 chrome.runtime.onInstalled.addListener(async function (details) {
   if (details.reason === "install") {
     // This block will be executed only when the extension is installed
-    const tabs = await chrome.tabs.query({ url: "https://chat.openai.com/*" });
+    const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
 
     if (tabs.length > 0) {
       await chrome.notifications.create({
@@ -21,7 +21,7 @@ chrome.runtime.onInstalled.addListener(async function (details) {
     }
   } else if (details.reason === "update") {
     // This block will be executed only when the extension is updated
-    const tabs = await chrome.tabs.query({ url: "https://chat.openai.com/*" });
+    const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
 
     if (tabs.length > 0) {
       await chrome.notifications.create({
@@ -41,7 +41,7 @@ chrome.runtime.onInstalled.addListener(async function (details) {
 });
 
 chrome.notifications.onButtonClicked.addListener(async function () {
-  const tabs = await chrome.tabs.query({ url: "https://chat.openai.com/*" });
+  const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
 
   tabs.forEach((tab) => {
     chrome.tabs.reload(tab.id);
