@@ -18,7 +18,7 @@ document
     // Change the text of the reload button
     document.getElementById("reload-btn").textContent = "Reload OpenAI Tabs";
 
-    const tabs = await browser.tabs.query({ url: "https://chat.openai.com/*" });
+    const tabs = await browser.tabs.query({ url: "https://chatgpt.com/*" });
 
     tabs.forEach((tab) => {
       browser.tabs.reload(tab.id);

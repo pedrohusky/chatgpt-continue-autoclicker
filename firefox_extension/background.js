@@ -17,7 +17,7 @@ browser.runtime.onInstalled.addListener(handleInstalled);
 
 browser.notifications.onClicked.addListener(function (notificationId) {
   browser.tabs
-    .query({ url: "https://chat.openai.com/*" })
+    .query({ url: "https://chatgpt.com/*" })
     .then((tabs) => {
       tabs.forEach((tab) => {
         browser.tabs.reload(tab.id);
